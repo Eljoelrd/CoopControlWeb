@@ -1,0 +1,115 @@
+﻿@page "/socios/delete"
+@rendermode InteractiveServer
+@using CoopControlWeb.Modelos
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<AppDBContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Eliminar Socio</PageTitle>
+
+<div class="rz-p-0 rz-p-md-12">
+    <RadzenRow JustifyContent="JustifyContent.Center">
+        <RadzenColumn Size="12" SizeMD="8" SizeLG="6">
+
+            @if (socios == null)
+            {
+                <RadzenCard Class="rz-shadow-10 rz-p-12 text-center">
+                    <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+                    <RadzenText TextStyle="TextStyle.Body1" Class="rz-mt-4">Preparando eliminación...</RadzenText>
+                </RadzenCard>
+            }
+            else
+            {
+                <RadzenTemplateForm TItem="Socios" Data="@socios" Submit="@DeleteSocios">
+                    <RadzenCard Class="rz-shadow-10 rz-border-radius-2 rz-p-0">
+
+                        @* Cabecera con Color de Acento (Danger para Eliminación) *@
+                        <div style="background-color: var(--rz-danger); height: 10px; width: 100%;"></div>
+
+                        <div class="rz-p-6 rz-p-md-10">
+                            <RadzenStack Gap="0.5rem" Class="rz-mb-6">
+                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                    <RadzenIcon Icon="warning" Style="color: var(--rz-danger)" />
+                                    <RadzenText TextStyle="TextStyle.H4" TagName="TagName.H1" Class="rz-m-0">Confirmar Eliminación</RadzenText>
+                                </RadzenStack>
+                                <RadzenText TextStyle="TextStyle.Body2" Class="rz-color-danger">
+                                    Esta acción es irreversible. El socio y sus registros relacionados serán borrados.
+                                </RadzenText>
+                            </RadzenStack>
+
+                            <RadzenStack Gap="1.5rem">
+
+                                @* Datos de Verificación *@
+                                <div class="rz-display-flex rz-align-items-center rz-mb-2">
+                                    <RadzenText TextStyle="TextStyle.Subtitle1" Class="rz-m-0 rz-color-danger"><b>Verificación de Datos</b></RadzenText>
+                                </div>
+
+                                <RadzenFormField Text="Cédula" Variant="Variant.Outlined" Style="width: 100%;">
+                                    <RadzenTextBox Value="@socios.Cedula" ReadOnly="true" />
+                                </RadzenFormField>
+
+                                <RadzenRow>
+                                    <RadzenColumn Size="12" SizeMD="6">
+                                        <RadzenFormField Text="Nombre" Variant="Variant.Outlined" Style="width: 100%;">
+                                            <RadzenTextBox Value="@socios.Nombre" ReadOnly="true" />
+                                        </RadzenFormField>
+                                    </RadzenColumn>
+                                    <RadzenColumn Size="12" SizeMD="6">
+                                        <RadzenFormField Text="Apellido" Variant="Variant.Outlined" Style="width: 100%;">
+                                            <RadzenTextBox Value="@socios.Apellido" ReadOnly="true" />
+                                        </RadzenFormField>
+                                    </RadzenColumn>
+                                </RadzenRow>
+
+                                <RadzenFormField Text="Teléfono de Contacto" Variant="Variant.Outlined" Style="width: 100%;">
+                                    <RadzenTextBox Value="@socios.Telefono" ReadOnly="true" />
+                                </RadzenFormField>
+
+                                @* Botones de Acción Crítica *@
+                                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Class="rz-mt-8 rz-pt-4" Style="border-top: 1px solid var(--rz-divider);">
+                                    <RadzenButton Text="No, Volver" Icon="arrow_back" ButtonStyle="ButtonStyle.Light" Variant="Variant.Text"
+                                                  Click="@(() => NavigationManager.NavigateTo("/socios"))" />
+
+                                    <RadzenButton ButtonType="ButtonType.Submit" Text="Sí, Eliminar Socio" Icon="delete_forever"
+                                                  ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Large"
+                                                  Style="border-radius: 25px; padding: 0 2rem;" />
+                                </RadzenStack>
+
+                            </RadzenStack>
+                        </div>
+                    </RadzenCard>
+                </RadzenTemplateForm>
+            }
+
+        </RadzenColumn>
+    </RadzenRow>
+</div>
+
+@code {
+    private Socios? socios;
+
+    [SupplyParameterFromQuery]
+    private int Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        socios = await context.Socios.FirstOrDefaultAsync(m => m.Id == Id);
+
+        if (socios == null)
+        {
+            NavigationManager.NavigateTo("/socios");
+        }
+    }
+
+    private async Task DeleteSocios()
+    {
+        if (socios != null)
+        {
+            using var context = DbFactory.CreateDbContext();
+            context.Socios.Remove(socios);
+            await context.SaveChangesAsync();
+            NavigationManager.NavigateTo("/socios");
+        }
+    }
+}

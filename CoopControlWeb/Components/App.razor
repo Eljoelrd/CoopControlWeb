@@ -1,0 +1,51 @@
+﻿<!DOCTYPE html>
+<html lang="es" data-theme="light">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+
+    <!-- Tema claro de Radzen -->
+    <link rel="stylesheet" href="_content/Radzen.Blazor/css/software-base.css">
+    <!-- Tema oscuro de Radzen -->
+    <link rel="stylesheet" href="_content/Radzen.Blazor/css/software-dark.css">
+    
+    <!-- CSS Personalizado -->
+    <link href="app.css" rel="stylesheet" />
+
+    <RadzenTheme Theme="software" @rendermode="InteractiveServer" />
+
+    <HeadOutlet />
+</head>
+
+<body>
+    <Routes @rendermode="InteractiveServer" />
+
+    <script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>
+    <script src="_framework/blazor.web.js"></script>
+
+    <script>
+        window.toggleTheme = function(isDark) {
+            const html = document.documentElement;
+            const lightTheme = document.getElementById('radzen-theme-light');
+            const darkTheme = document.getElementById('radzen-theme-dark');
+
+            if (isDark) {
+                html.setAttribute('data-theme', 'dark');
+                lightTheme.disabled = true;
+                darkTheme.disabled = false;
+            } else {
+                html.setAttribute('data-theme', 'light');
+                lightTheme.disabled = false;
+                darkTheme.disabled = true;
+            }
+        };
+    </script>
+</body>
+
+</html>
