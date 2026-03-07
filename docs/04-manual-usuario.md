@@ -108,10 +108,22 @@ El sistema está dirigido a:
 ---
 
 ## 6. Solución de Problemas Comunes
+
 ### 6.1 Error de inicio de sesión
+- **Causa**: Credenciales incorrectas o falta de permisos.
+- **Solución**: Verifique que su usuario y contraseña sean correctos (recuerde que el sistema distingue entre mayúsculas y minúsculas). Si el problema persiste, utilice la opción "Recuperar contraseña" o contacte al administrador para verificar si su cuenta está activa.
+
 ### 6.2 Página no carga correctamente
+- **Causa**: Problemas de conexión a internet o caché del navegador desactualizada.
+- **Solución**: Intente recargar la página presionando `Ctrl + F5`. Asegúrese de estar utilizando un navegador compatible y que su conexión a internet sea estable.
+
 ### 6.3 Datos no se guardan
+- **Causa**: Campos obligatorios vacíos o pérdida de sesión por inactividad.
+- **Solución**: Revise que todos los campos marcados con asterisco (*) o indicados como requeridos estén completos y sigan el formato correcto. Si ha pasado mucho tiempo inactivo, cierre sesión y vuelva a entrar para refrescar su token de acceso.
+
 ### 6.4 Problemas de visualización
+- **Causa**: Resolución de pantalla inadecuada o conflictos con el modo oscuro/claro.
+- **Solución**: Verifique que su resolución de pantalla sea la mínima recomendada. Si los elementos se ven superpuestos, intente cambiar el tema visual (Modo Oscuro/Claro) desde la configuración para forzar el refresco de los estilos de Radzen.
 
 ---
 
