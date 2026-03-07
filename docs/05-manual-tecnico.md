@@ -1,10 +1,23 @@
-
 # Manual Técnico - CoopControl Web
 
 ## 1. Introducción
 ### 1.1 Propósito del Documento
+El propósito de este manual es servir como guía técnica para el desarrollo, configuración, despliegue y mantenimiento del sistema **CoopControl Web**. Proporciona a los desarrolladores y administradores la información necesaria para comprender la arquitectura, las tecnologías utilizadas, la estructura del proyecto y las mejores prácticas de seguridad y operación.
+
 ### 1.2 Alcance del Sistema
+El sistema **CoopControl Web** está diseñado para la gestión integral de cooperativas, incluyendo módulos de administración de socios, emisión de certificados, solicitudes de retiros, generación de reportes y configuración personalizada. El alcance abarca:
+- Interfaz web accesible desde navegadores modernos.
+- Integración con bases de datos SQL Server.
+- Autenticación y autorización basada en roles.
+- Funcionalidades de monitoreo, seguridad y escalabilidad.
+- Despliegue en entornos locales (IIS).
+
 ### 1.3 Glosario de Términos Técnicos
+- **Blazor**: Framework de Microsoft para construir aplicaciones web interactivas con C# y .NET.  
+- **Radzen.Blazor**: Conjunto de componentes UI para Blazor.  
+- **Entity Framework (EF)**: ORM para interactuar con bases de datos SQL.  
+- **Repository Pattern**: Patrón de diseño para separar la lógica de acceso a datos.  
+- **CI/CD**: Integración y despliegue continuo.  
 
 ## 2. Arquitectura del Sistema
 
@@ -116,9 +129,8 @@ dotnet run
 |--------------|--------------------------|
 | Usuarios     | Credenciales y roles     |
 | Socios       | Información de socios    |
-| Cooperativas | Datos de cooperativas    |
-| Certificados | Solicitudes y emisión de certificados|
-| Retiros      | Solicitudes y procesamiento de retiros|
+| Certificados | Solicitudes y emisión de certificados |
+| Retiros      | Solicitudes y procesamiento de retiros |
 | Reportes     | Historial de reportes    |
 
 ### 6.3 Migraciones (Entity Framework)
@@ -255,4 +267,4 @@ ENTRYPOINT ["dotnet", "CoopControlWeb.dll"]
 - Radzen Blazor Components  
 - GitHub del proyecto  
 - Stack Overflow tags relevantes  
-
+```
