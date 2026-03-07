@@ -1,32 +1,39 @@
-#  Arquitectura del Sistema
-## Diagrama de Arquitectura
-┌─────────────────────────────────────────┐
-│ Cliente (Navegador)                     │
-│ Blazor Web                              │
-└─────────────────┬───────────────────────┘
-                  │HTTPS
-┌─────────────────▼───────────────────────┐
-│ Servidor (.NET 9)                       │
-│ ┌─────────────────┐                     │
-│ │ Radzen UI       │                     │
-│ ├─────────────────┤                     │
-│ │ Componentes     │                     │
-│ ├─────────────────┤                     │
-│ │ Servicios       │                     │
-│ └─────────────────┘                     │
-└─────────────────┬───────────────────────
-                  │
-┌─────────────────▼───────────────────────┐
-│ Base de Datos                           │
-│ SQL Server                              │
-└─────────────────────────────────────────┘
 
+# Manual Técnico - CoopControl Web
 
-## Tecnologías
-| Capa | Tecnología |
-|------|------------|
-| Frontend | Blazor Web + Radzen |
-| Backend | .NET 9 |
-| Base de Datos | SQL Server |
+## 2. Arquitectura del Sistema
 
-| Hosting | Azure / IIS |
+### 2.1 Diagrama de Arquitectura
+```
+┌────────────────────────────┐
+│ Cliente (Navegador)        │
+│ Blazor Web                 │
+└────────────────────────────┘
+            │ HTTPS
+┌────────────────────────────┐
+│ Servidor (.NET 9)          │
+│ ┌────────────────────────┐ │
+│ │ Radzen UI              │ │
+│ └────────────────────────┘ │
+│ ┌────────────────────────┐ │
+│ │ Componentes            │ │
+│ └────────────────────────┘ │
+│ ┌────────────────────────┐ │
+│ │ Servicios              │ │
+│ └────────────────────────┘ │
+└────────────────────────────┘
+            │
+┌────────────────────────────┐
+│ Base de Datos              │
+│ SQL Server                 │
+└────────────────────────────┘
+```
+
+### 2.2 Tecnologías
+| Capa         | Tecnología           |
+|--------------|----------------------|
+| Frontend     | Blazor Web + Radzen  |
+| Backend      | .NET 9               |
+| Base de Datos| SQL Server           |
+| Hosting      | Azure / IIS          |
+```
