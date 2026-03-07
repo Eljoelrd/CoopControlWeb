@@ -117,6 +117,8 @@ dotnet run
 | Usuarios     | Credenciales y roles     |
 | Socios       | Información de socios    |
 | Cooperativas | Datos de cooperativas    |
+| Certificados | Solicitudes y emisión de certificados|
+| Retiros      | Solicitudes y procesamiento de retiros|
 | Reportes     | Historial de reportes    |
 
 ### 6.3 Migraciones (Entity Framework)
@@ -253,3 +255,4 @@ ENTRYPOINT ["dotnet", "CoopControlWeb.dll"]
 - Radzen Blazor Components  
 - GitHub del proyecto  
 - Stack Overflow tags relevantes  
+
