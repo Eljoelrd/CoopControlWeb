@@ -18,7 +18,7 @@
                   │
 ┌─────────────────▼───────────────────────┐
 │ Base de Datos                           │
-│ (SQL Server / PostgreSQL)               │
+│ SQL Server                              │
 └─────────────────────────────────────────┘
 
 
@@ -28,4 +28,5 @@
 | Frontend | Blazor Web + Radzen |
 | Backend | .NET 9 |
 | Base de Datos | SQL Server |
+
 | Hosting | Azure / IIS |
