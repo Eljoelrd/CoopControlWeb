@@ -13,13 +13,13 @@
 
             <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="margin-left: auto; padding-right: 1rem;">
                 <RadzenAppearanceToggle Class="header-btn" />
-                
+
                 <AuthorizeView>
                     <Authorized>
                         <RadzenText TextStyle="TextStyle.Caption" Style="color: white; margin-bottom: 0;" Class="rz-display-none rz-display-md-block">
                             @context.User.Identity?.Name (@userRole)
                         </RadzenText>
-                        <RadzenButton Icon="logout" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Text" 
+                        <RadzenButton Icon="logout" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Text"
                                       Click="@(() => NavigationManager.NavigateTo("/logout", true))" />
                     </Authorized>
                 </AuthorizeView>
@@ -35,26 +35,41 @@
                     <RadzenPanelMenuItem Text="Iniciar Sesión" Icon="login" Path="/login" />
                     <RadzenPanelMenuItem Text="Registrarse" Icon="person_add" Path="/register" />
                 </NotAuthorized>
-                
+
                 <Authorized>
                     <RadzenPanelMenuItem Text="Inicio" Icon="home" Path="/" />
 
                     @* Usamos la variable userRole que cargamos en OnParametersSet *@
                     @if (userRole == "Admin")
                     {
-                        <RadzenPanelMenuHeader Text="ADMINISTRACIÓN" />
-                        <RadzenPanelMenuItem Text="Gestión de Socios" Icon="people" Path="/socios" />
-                        <RadzenPanelMenuItem Text="Gestión de Aportes" Icon="payments" Path="/aportes" />
-                        <RadzenPanelMenuItem Text="Gestión de Préstamos" Icon="account_balance" Path="/prestamos" />
+                        <!-- Menú Administrador -->
+                        <RadzenPanelMenuItem Text="Socios" Icon="people" Path="/socios" />
+                        <RadzenPanelMenuItem Text="Aportes" Icon="attach_money" Path="/aportes" />
+                        <RadzenPanelMenuItem Text="Certificados" Icon="description" Path="/certificados" />
+                        <RadzenPanelMenuItem Text="Depósitos" Icon="savings" Path="/depositos" />
+                        <RadzenPanelMenuItem Text="Retiros" Icon="payments" Path="/retiros" />
+                        <RadzenPanelMenuItem Text="Préstamos" Icon="" Path="/prestamos" />
+                        <RadzenPanelMenuItem Text="Reportes" Icon="assessment" Path="/reportes" />
+                        <RadzenPanelMenuItem Text="Configuración" Icon="settings" Path="/configuracion" />
                     }
-                    else
+                    else if (userRole == "Cajero")
                     {
-                        <RadzenPanelMenuHeader Text="MI CUENTA" />
-                        <RadzenPanelMenuItem Text="Mis Aportes" Icon="history" Path="/mis-aportes" />
-                        <RadzenPanelMenuItem Text="Mis Préstamos" Icon="credit_card" Path="/mis-prestamos" />
+                        <!-- Menú Cajero -->
+                        <RadzenPanelMenuItem Text="Aportes" Icon="attach_money" Path="/aporte-cajero" />
+                        <RadzenPanelMenuItem Text="Préstamos" Icon="" Path="/prestamo-cajero" />
+                        <RadzenPanelMenuItem Text="Certificados" Icon="description" Path="/certificados" />
+                        <RadzenPanelMenuItem Text="Configuración" Icon="settings" Path="/configuracion" />
+                    }
+                    else if (userRole == "Socio")
+                    {
+                        <!-- Menú Socio (DefaultUser) -->
+                        <RadzenPanelMenuItem Text="Mis Aportes" Icon="attach_money" Path="/mis-aportes" />
+                        <RadzenPanelMenuItem Text="Mis Préstamos" Icon="" Path="/mis-prestamos" />
+                        <RadzenPanelMenuItem Text="Mis Certificados" Icon="description" Path="/mis-certificados" />
+                        <RadzenPanelMenuItem Text="Configuración" Icon="settings" Path="/configuracion" />
                     }
 
-                    <RadzenPanelMenuItem Text="Configuración" Icon="settings" Path="/configuracion" />
+
                 </Authorized>
             </AuthorizeView>
         </RadzenPanelMenu>
@@ -88,3 +103,6 @@
         }
     }
 }
+
+
+

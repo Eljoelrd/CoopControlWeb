@@ -7,6 +7,8 @@
 @inject IDbContextFactory<AppDBContext> DbFactory
 @inject AuthenticationStateProvider AuthStateProvider
 @rendermode InteractiveServer
+@attribute [Authorize(Roles = "Socio")]
+
 
 <PageTitle>Mis Aportes</PageTitle>
 
