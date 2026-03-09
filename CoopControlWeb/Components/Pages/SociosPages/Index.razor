@@ -53,7 +53,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Uso correcto de la Factory para Blazor Server [cite: 45]
+        // Uso correcto de la Factory para Blazor Server
         context = DbFactory.CreateDbContext();
         allSocios = await context.Socios.ToListAsync(); 
     }
