@@ -1,0 +1,68 @@
+﻿@page "/socios"
+@rendermode InteractiveServer
+@using CoopControlWeb.Modelos
+@using Microsoft.EntityFrameworkCore
+@implements IAsyncDisposable
+@inject IDbContextFactory<AppDBContext> DbFactory
+
+<PageTitle>Gestión de Socios</PageTitle>
+
+<div class="container mt-4">
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Class="rz-mb-4">
+        <RadzenText TextStyle="TextStyle.H4" TagName="TagName.H1" Class="rz-m-0">
+            <RadzenIcon Icon="group" /> Gestión de Socios
+        </RadzenText>
+        <RadzenButton Click=@(() => NavigationManager.NavigateTo("/socios/create"))
+                      Text="Nuevo Socio" Icon="add_circle" ButtonStyle="ButtonStyle.Primary" />
+    </RadzenStack>
+
+    <RadzenCard Variant="Variant.Flat" Class="rz-shadow-2">
+        @* DataGrid de Radzen con Paginación, Filtrado y Ordenamiento automáticos *@
+        <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false"
+                        FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="10" AllowPaging="true"
+                        PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
+                        Data="@allSocios" TItem="Socios" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or">
+            <Columns>
+                <RadzenDataGridColumn TItem="Socios" Property="Cedula" Title="Cédula" Width="140px" />
+                <RadzenDataGridColumn TItem="Socios" Property="Nombre" Title="Nombre" />
+                <RadzenDataGridColumn TItem="Socios" Property="Apellido" Title="Apellido" />
+                <RadzenDataGridColumn TItem="Socios" Property="Sexo" Title="Sexo" Width="100px" />
+                <RadzenDataGridColumn TItem="Socios" Property="Telefono" Title="Teléfono" Width="150px" />
+                <RadzenDataGridColumn TItem="Socios" Property="Email" Title="Email" />
+
+                @* Columna de Acciones *@
+                <RadzenDataGridColumn TItem="Socios" Title="Acciones" Context="socio" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="160px">
+                    <Template>
+                        <RadzenButton Icon="info" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Small"
+                                      Click="@(() => NavigationManager.NavigateTo($"/socios/details?id={socio.Id}"))" />
+                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Warning" Variant="Variant.Flat" Size="ButtonSize.Small" Class="rz-ml-1"
+                                      Click="@(() => NavigationManager.NavigateTo($"/socios/edit?id={socio.Id}"))" />
+                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Flat" Size="ButtonSize.Small" Class="rz-ml-1"
+                                      Click="@(() => NavigationManager.NavigateTo($"/socios/delete?id={socio.Id}"))" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    </RadzenCard>
+</div>
+
+@code {
+    [Inject] private NavigationManager NavigationManager { get; set; } = default!;
+    private AppDBContext? context;
+    private List<Socios> allSocios = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Uso correcto de la Factory para Blazor Server [cite: 45]
+        context = DbFactory.CreateDbContext();
+        allSocios = await context.Socios.ToListAsync(); 
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (context != null)
+        {
+            await context.DisposeAsync();
+        }
+    }
+}

@@ -1,0 +1,108 @@
+﻿@page "/aportes/delete"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using CoopControlWeb.Modelos
+@inject IDbContextFactory<AppDBContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Prototipo - Eliminar Aporte</PageTitle>
+
+<div class="rz-p-0 rz-p-md-12">
+    <RadzenRow JustifyContent="JustifyContent.Center">
+        <RadzenColumn Size="12" SizeMD="8" SizeLG="6">
+
+            @if (aporte == null)
+            {
+                <RadzenCard Class="rz-shadow-10 rz-p-12 text-center">
+                    <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+                    <RadzenText TextStyle="TextStyle.Body1" Class="rz-mt-4">Preparando baja de registro...</RadzenText>
+                </RadzenCard>
+            }
+            else
+            {
+                <RadzenTemplateForm TItem="Aporte" Data="@aporte" Submit="@DeleteAporte">
+                    <RadzenCard Class="rz-shadow-10 rz-border-radius-2 rz-p-0">
+
+                        @* Barra superior de alerta máxima *@
+                        <div style="background-color: var(--rz-danger); height: 10px; width: 100%;"></div>
+
+                        <div class="rz-p-6 rz-p-md-10">
+                            <RadzenStack Gap="0.5rem" Class="rz-mb-6">
+                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                    <RadzenIcon Icon="gpp_maybe" Style="color: var(--rz-danger); font-size: 2rem;" />
+                                    <RadzenText TextStyle="TextStyle.H4" TagName="TagName.H1" Class="rz-m-0">Anular Transacción</RadzenText>
+                                </RadzenStack>
+                                <RadzenText TextStyle="TextStyle.Body2" Class="rz-color-danger">
+                                    ¡Atención! Esta acción restará el monto del saldo acumulado del socio.
+                                </RadzenText>
+                            </RadzenStack>
+
+                            <RadzenStack Gap="1.5rem">
+
+                                @* Resumen de confirmación *@
+                                <div style="background-color: var(--rz-danger-lighter); padding: 1.5rem; border-radius: 8px;" class="rz-mb-4">
+                                    <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-mb-2">Vas a eliminar el siguiente aporte:</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.H5" Class="rz-m-0"><b>RD$ @aporte.Monto.ToString("N2")</b></RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Body2">Perteneciente a: <b>@aporte.Socio?.Nombre @aporte.Socio?.Apellido</b></RadzenText>
+                                </div>
+
+                                @* Campos de verificación (Solo lectura) *@
+                                <RadzenFormField Text="Fecha del Aporte" Variant="Variant.Outlined" Style="width: 100%;">
+                                    <RadzenTextBox Value="@aporte.Fecha.ToString("dd/MM/yyyy")" ReadOnly="true" />
+                                </RadzenFormField>
+
+                                <RadzenFormField Text="Tipo de Aporte" Variant="Variant.Outlined" Style="width: 100%;">
+                                    <RadzenTextBox Value="@aporte.Tipo" ReadOnly="true" />
+                                </RadzenFormField>
+
+                                @* Botones Críticos *@
+                                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Class="rz-mt-6">
+                                    <RadzenButton Text="Cancelar" Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Text"
+                                                  Click="@(() => NavigationManager.NavigateTo("/aportes"))" />
+
+                                    <RadzenButton ButtonType="ButtonType.Submit" Text="Confirmar Eliminación" Icon="delete_sweep"
+                                                  ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Large"
+                                                  Style="border-radius: 25px; padding: 0 2rem;" />
+                                </RadzenStack>
+
+                            </RadzenStack>
+                        </div>
+                    </RadzenCard>
+                </RadzenTemplateForm>
+            }
+
+        </RadzenColumn>
+    </RadzenRow>
+</div>
+
+@code {
+    private Aporte? aporte;
+
+    [SupplyParameterFromQuery]
+    private int Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        aporte = await context.Aportes
+            .Include(a => a.Socio)
+            .FirstOrDefaultAsync(m => m.Id == Id);
+
+        if (aporte == null)
+        {
+            NavigationManager.NavigateTo("/aportes");
+        }
+    }
+
+    private async Task DeleteAporte()
+    {
+        if (aporte != null)
+        {
+            using var context = DbFactory.CreateDbContext();
+            context.Aportes.Remove(aporte);
+            await context.SaveChangesAsync();
+            NavigationManager.NavigateTo("/aportes");
+        }
+    }
+}

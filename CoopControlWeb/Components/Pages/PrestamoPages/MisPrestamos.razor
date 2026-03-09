@@ -1,0 +1,72 @@
+﻿@page "/mis-prestamos"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore
+@using CoopControlWeb.Modelos
+@inject IDbContextFactory<AppDBContext> DbFactory
+@inject AuthenticationStateProvider AuthStateProvider
+@rendermode InteractiveServer
+
+<PageTitle>Mis Préstamos</PageTitle>
+
+<RadzenText TextStyle="TextStyle.H4" Class="rz-mb-4">Mis Préstamos</RadzenText>
+
+<RadzenStack Gap="1rem">
+    @if (misPrestamos == null)
+    {
+        <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+    }
+    else if (!misPrestamos.Any())
+    {
+        <RadzenAlert Title="Sin Préstamos" AllowClose="false" AlertStyle="AlertStyle.Info" Variant="Variant.Flat">
+            Actualmente no tienes préstamos registrados.
+        </RadzenAlert>
+    }
+    else
+    {
+        @foreach (var prestamo in misPrestamos)
+        {
+            <RadzenCard Class="rz-shadow-2">
+                <RadzenRow>
+                    <RadzenColumn Size="12" SizeMD="8">
+                        <RadzenText TextStyle="TextStyle.Overline" Class="rz-display-flex rz-mt-2 rz-my-0">Monto Solicitado</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H5"><b>@string.Format("{0:C}", prestamo.Monto)</b></RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2">Fecha: @prestamo.FechaPrestamo.ToShortDateString()</RadzenText>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="4" Class="rz-text-align-right">
+                        <RadzenBadge BadgeStyle="@GetStatusStyle(prestamo.Estado)" Text="@prestamo.Estado" />
+                    </RadzenColumn>
+                </RadzenRow>
+            </RadzenCard>
+        }
+    }
+</RadzenStack>
+
+@code {
+    private List<Prestamo>? misPrestamos;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var email = authState.User.Identity?.Name;
+
+        using var context = DbFactory.CreateDbContext();
+        var socio = await context.Socios.FirstOrDefaultAsync(s => s.Email == email);
+
+        if (socio != null)
+        {
+            misPrestamos = await context.Prestamos
+                .Where(p => p.SocioId == socio.Id)
+                .OrderByDescending(p => p.FechaPrestamo)
+                .ToListAsync();
+        }
+    }
+
+    private BadgeStyle GetStatusStyle(string estado) => estado?.ToLower() switch
+    {
+        "activo" => BadgeStyle.Success,
+        "pendiente" => BadgeStyle.Warning,
+        "pagado" => BadgeStyle.Info,
+        _ => BadgeStyle.Secondary
+    };
+}

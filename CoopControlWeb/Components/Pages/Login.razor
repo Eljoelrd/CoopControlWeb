@@ -1,0 +1,71 @@
+﻿@page "/login"
+@using CoopControlWeb.Components.Middleware
+@using CoopControlWeb.Modelos
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authentication.Cookies
+@inject UserService userService
+@inject NavigationManager nav
+
+<div class="rz-p-12 rz-text-align-center">
+    <RadzenCard Class="rz-shadow-10 rz-mx-auto" Style="max-width: 400px; border-radius: 15px;">
+        <RadzenImage Path="img/coop.png" Style="width: 120px; margin-bottom: 20px;" />
+        <RadzenText TextStyle="TextStyle.H4" Class="rz-mb-4">CoopControl</RadzenText>
+
+        <RadzenTemplateForm TItem="InputModel" Data="@Input" Submit="@OnLogin">
+            <RadzenStack Gap="1.5rem">
+                <RadzenFormField Text="Correo Electrónico" Variant="Variant.Outlined">
+                    <RadzenTextBox @bind-Value="Input.Email" Name="Email" />
+                </RadzenFormField>
+
+                <RadzenFormField Text="Contraseña" Variant="Variant.Outlined">
+                    <RadzenPassword @bind-Value="Input.Password" Name="Password" />
+                </RadzenFormField>
+
+                <RadzenButton ButtonType="ButtonType.Submit" Text="Entrar al Sistema"
+                              ButtonStyle="ButtonStyle.Primary" Class="rz-w-100"
+                              Style="border-radius: 25px; height: 50px;" />
+
+                @if (errorMessage != null)
+                {
+                    <RadzenAlert AlertStyle="AlertStyle.Danger" Variant="Variant.Flat" Shade="Shade.Lighter">
+                        @errorMessage
+                    </RadzenAlert>
+                }
+            </RadzenStack>
+        </RadzenTemplateForm>
+    </RadzenCard>
+</div>
+
+@code {
+    private string? errorMessage;
+    private InputModel Input = new();
+
+    public class InputModel
+    {
+        public string Email { get; set; } = "";
+        public string Password { get; set; } = "";
+    }
+
+    public async Task OnLogin()
+    {
+        var user = userService.Verify(Input.Email, Input.Password);
+        if (user == null)
+        {
+            errorMessage = "Credenciales inválidas o cuenta inactiva.";
+            return;
+        }
+
+        var claims = new List<Claim> {
+            new Claim(ClaimTypes.Name, user.Email),
+            new Claim(ClaimTypes.Role, user.Role) // Aquí se pasa "Admin" o "Socio"
+        };
+
+        var claimIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        ClaimsPrincipal claimsPrincipal = new ClaimsPrincipal(claimIdentity);
+        Guid key = Guid.NewGuid();
+        AuthMiddleware.Logins[key] = claimsPrincipal;
+
+        // En Login.razor, dentro de OnLogin
+        nav.NavigateTo($"/login?key={key}", forceLoad: true);
+    }
+}

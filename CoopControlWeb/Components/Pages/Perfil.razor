@@ -1,0 +1,55 @@
+﻿@page "/perfil"
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using CoopControlWeb.Modelos
+@inject AuthenticationStateProvider AuthProvider
+@inject UserService userService
+
+@rendermode InteractiveServer
+
+<h3>Mi Perfil</h3>
+
+@if (user is not null && user.Identity is not null && user.Identity.IsAuthenticated)
+{
+    <div class="card p-3">
+        <h5>Datos Personales</h5>
+        @if (dbUser is not null)
+        {
+            <p><b>Nombre:</b> @dbUser.Nombre @dbUser.Apellido</p>
+        }
+        <p><b>Email:</b> @user.Identity.Name</p>
+        <p><b>Rol:</b> @role</p>
+
+        @if (user.IsInRole("Admin"))
+        {
+            <p>Eres administrador, puedes gestionar cualquier socio.</p>
+        }
+        else
+        {
+            <p>Eres usuario normal, solo puedes ver y editar tu información.</p>
+        }
+    </div>
+}
+else
+{
+    <p>No has iniciado sesión.</p>
+}
+
+@code {
+    private ClaimsPrincipal? user;
+    private string? role;
+    private User? dbUser;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthProvider.GetAuthenticationStateAsync();
+        user = state.User;
+
+        if (user.Identity is not null && user.Identity.IsAuthenticated)
+        {
+            role = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+            var email = user.Identity.Name;
+            dbUser = userService.GetByEmail(email);
+        }
+    }
+}
