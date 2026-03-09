@@ -1,0 +1,65 @@
+﻿@page "/prestamos/details"
+@rendermode InteractiveServer
+@using CoopControlWeb.Modelos
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<AppDBContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Prototipo - Detalle de Préstamo</PageTitle>
+
+<div class="rz-p-0 rz-p-md-12">
+    <RadzenRow JustifyContent="JustifyContent.Center">
+        <RadzenColumn Size="12" SizeLG="10">
+            @if (prestamo != null)
+            {
+                <RadzenCard Class="rz-shadow-10 rz-border-radius-2 rz-p-0">
+                    <div style="background-color: var(--rz-primary); height: 10px; width: 100%;"></div>
+
+                    <div class="rz-p-6 rz-p-md-10">
+                        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Class="rz-mb-6">
+                            <RadzenText TextStyle="TextStyle.H4"><b>Expediente de Crédito #@prestamo.Id</b></RadzenText>
+                            <RadzenBadge Text="@prestamo.Estado" BadgeStyle="BadgeStyle.Primary" IsPill="true" />
+                        </RadzenStack>
+
+                        <RadzenRow Gap="2rem">
+                            <RadzenColumn Size="12" SizeMD="6">
+                                <RadzenFormField Text="Socio" Variant="Variant.Outlined" Style="width: 100%;" Class="rz-mb-4">
+                                    <RadzenTextBox Value="@($"{prestamo.Socio?.Nombre} {prestamo.Socio?.Apellido}")" ReadOnly="true" />
+                                </RadzenFormField>
+                                <RadzenFormField Text="Monto Original" Variant="Variant.Outlined" Style="width: 100%;">
+                                    <RadzenTextBox Value="@($"RD$ {prestamo.Monto:N2}")" ReadOnly="true" />
+                                </RadzenFormField>
+                            </RadzenColumn>
+
+                            <RadzenColumn Size="12" SizeMD="6">
+                                <RadzenFormField Text="Fecha de Inicio" Variant="Variant.Outlined" Style="width: 100%;" Class="rz-mb-4">
+                                    <RadzenTextBox Value="@prestamo.FechaPrestamo.ToString("dd/MM/yyyy")" ReadOnly="true" />
+                                </RadzenFormField>
+                                <RadzenFormField Text="Última Modificación" Variant="Variant.Outlined" Style="width: 100%;">
+                                    <RadzenTextBox Value="@(prestamo.FechaModificacion?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")" ReadOnly="true" />
+                                </RadzenFormField>
+                            </RadzenColumn>
+                        </RadzenRow>
+
+                        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem" Class="rz-mt-10">
+                            <RadzenButton Text="Volver" Icon="arrow_back" ButtonStyle="ButtonStyle.Light" Click="@(() => NavigationManager.NavigateTo("/prestamos"))" />
+                            <RadzenButton Text="Editar este Préstamo" Icon="edit" ButtonStyle="ButtonStyle.Warning"
+                                          Click="@(() => NavigationManager.NavigateTo($"/prestamos/edit?id={prestamo.Id}"))" Style="color: black;" />
+                        </RadzenStack>
+                    </div>
+                </RadzenCard>
+            }
+        </RadzenColumn>
+    </RadzenRow>
+</div>
+
+@code {
+    [SupplyParameterFromQuery] private int Id { get; set; }
+    private Prestamo? prestamo;
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        prestamo = await context.Prestamos.Include(p => p.Socio).FirstOrDefaultAsync(p => p.Id == Id);
+    }
+}

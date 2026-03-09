@@ -1,5 +1,4 @@
-﻿/*
-using System.Linq;
+﻿using System.Linq;
 using CoopControlWeb.Modelos;
 using BCrypt.Net;
 
@@ -73,7 +72,3 @@ namespace CoopControlWeb.Modelos
 
     }
 }
- 
-
-
- */

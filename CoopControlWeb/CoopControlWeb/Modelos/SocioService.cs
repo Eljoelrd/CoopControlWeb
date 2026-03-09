@@ -1,4 +1,4 @@
-﻿using CoopControlWeb.Modelos;
+﻿
 
 namespace CoopControlWeb.Modelos
 {

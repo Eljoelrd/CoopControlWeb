@@ -1,0 +1,84 @@
+﻿@page "/prestamos/create"
+@rendermode InteractiveServer
+@using CoopControlWeb.Modelos
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<AppDBContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Prototipo - Nuevo Préstamo</PageTitle>
+
+<div class="rz-p-0 rz-p-md-12">
+    <RadzenRow JustifyContent="JustifyContent.Center">
+        <RadzenColumn Size="12" SizeMD="8" SizeLG="6">
+
+            <RadzenTemplateForm TItem="Prestamo" Data="@prestamo" Submit="@AddPrestamo">
+                <RadzenCard Class="rz-shadow-10 rz-border-radius-2 rz-p-0">
+                    <div style="background-color: var(--rz-primary); height: 10px; width: 100%;"></div>
+
+                    <div class="rz-p-6 rz-p-md-10">
+                        <RadzenText TextStyle="TextStyle.H4" Class="rz-mb-6">Solicitud de Préstamo</RadzenText>
+
+                        <RadzenStack Gap="1.5rem">
+                            @* Socio *@
+                            <RadzenFormField Text="Socio Solicitante" Variant="Variant.Outlined" Style="width: 100%;">
+                                <RadzenDropDown @bind-Value="prestamo.SocioId" Data="@socios"
+                                                TextProperty="Nombre" ValueProperty="Id"
+                                                AllowFiltering="true" Placeholder="Seleccione un socio" Class="w-100">
+                                    <Template Context="s">
+                                        @((s as Socios).Nombre) @((s as Socios).Apellido)
+                                    </Template>
+                                </RadzenDropDown>
+                            </RadzenFormField>
+
+                            @* Monto y Fecha *@
+                            <RadzenRow>
+                                <RadzenColumn Size="12" SizeMD="6">
+                                    <RadzenFormField Text="Monto Solicitado" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenNumeric @bind-Value="prestamo.Monto" TValue="decimal" ShowUpDown="false" />
+                                    </RadzenFormField>
+                                </RadzenColumn>
+                                <RadzenColumn Size="12" SizeMD="6">
+                                    <RadzenFormField Text="Fecha Desembolso" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenDatePicker @bind-Value="prestamo.FechaPrestamo" DateFormat="dd/MM/yyyy" />
+                                    </RadzenFormField>
+                                </RadzenColumn>
+                            </RadzenRow>
+
+                            @* Estado Inicial *@
+                            <RadzenFormField Text="Estado del Préstamo" Variant="Variant.Outlined" Style="width: 100%;">
+                                <RadzenDropDown @bind-Value="prestamo.Estado" Data="@(new[] { "Pendiente", "Activo" })" />
+                            </RadzenFormField>
+
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Class="rz-mt-6">
+                                <RadzenButton Text="Volver" ButtonStyle="ButtonStyle.Light" Variant="Variant.Text"
+                                              Click="@(() => NavigationManager.NavigateTo("/prestamos"))" />
+                                <RadzenButton ButtonType="ButtonType.Submit" Text="Generar Préstamo"
+                                              ButtonStyle="ButtonStyle.Primary" Style="border-radius: 20px;" />
+                            </RadzenStack>
+                        </RadzenStack>
+                    </div>
+                </RadzenCard>
+            </RadzenTemplateForm>
+
+        </RadzenColumn>
+    </RadzenRow>
+</div>
+
+@code {
+    private Prestamo prestamo = new() { FechaPrestamo = DateTime.Today, Estado = "Activo" };
+    private List<Socios> socios = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        socios = await context.Socios.ToListAsync();
+    }
+
+    private async Task AddPrestamo()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Prestamos.Add(prestamo);
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo("/prestamos");
+    }
+}
