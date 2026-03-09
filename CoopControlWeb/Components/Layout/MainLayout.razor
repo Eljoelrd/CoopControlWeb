@@ -43,12 +43,12 @@
                     @if (userRole == "Admin")
                     {
                         <!-- Menú Administrador -->
-                        <RadzenPanelMenuItem Text="Socios" Icon="people" Path="/socios" />
-                        <RadzenPanelMenuItem Text="Aportes" Icon="attach_money" Path="/aportes" />
+                        <RadzenPanelMenuItem Text="Gestión de Socios" Icon="people" Path="/socios" />
+                        <RadzenPanelMenuItem Text="Gestión de Aportes" Icon="payments" Path="/aportes" />
+                        <RadzenPanelMenuItem Text="Gestión de Préstamos" Icon="account_balance" Path="/prestamos" />
                         <RadzenPanelMenuItem Text="Certificados" Icon="description" Path="/certificados" />
                         <RadzenPanelMenuItem Text="Depósitos" Icon="savings" Path="/depositos" />
                         <RadzenPanelMenuItem Text="Retiros" Icon="payments" Path="/retiros" />
-                        <RadzenPanelMenuItem Text="Préstamos" Icon="" Path="/prestamos" />
                         <RadzenPanelMenuItem Text="Reportes" Icon="assessment" Path="/reportes" />
                         <RadzenPanelMenuItem Text="Configuración" Icon="settings" Path="/configuracion" />
                     }
@@ -64,12 +64,10 @@
                     {
                         <!-- Menú Socio (DefaultUser) -->
                         <RadzenPanelMenuItem Text="Mis Aportes" Icon="attach_money" Path="/mis-aportes" />
-                        <RadzenPanelMenuItem Text="Mis Préstamos" Icon="" Path="/mis-prestamos" />
+                        <RadzenPanelMenuItem Text="Mis Préstamos" Icon="credit_card" Path="/mis-prestamos" />
                         <RadzenPanelMenuItem Text="Mis Certificados" Icon="description" Path="/mis-certificados" />
                         <RadzenPanelMenuItem Text="Configuración" Icon="settings" Path="/configuracion" />
                     }
-
-
                 </Authorized>
             </AuthorizeView>
         </RadzenPanelMenu>
@@ -80,6 +78,13 @@
             @Body
         </div>
     </RadzenBody>
+
+    <RadzenFooter>
+        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+            <span>© 2026 CoopControl Web</span>
+            <RadzenText TextStyle="TextStyle.Caption">Versión 1.0.0 (Prototipo)</RadzenText>
+        </RadzenStack>
+    </RadzenFooter>
 </RadzenLayout>
 
 @code {
