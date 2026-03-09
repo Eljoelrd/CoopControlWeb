@@ -27,8 +27,8 @@
         </RadzenStack>
     </RadzenHeader>
 
-    <RadzenSidebar @bind-Expanded="@sidebarExpanded">
-        <RadzenPanelMenu>
+    <RadzenSidebar Responsive="false" Style="width: max-content;">
+        <RadzenPanelMenu DisplayStyle="@(sidebarExpanded? MenuItemDisplayStyle.IconAndText: MenuItemDisplayStyle.Icon)" ShowArrow="false">
             <AuthorizeView>
                 <NotAuthorized>
                     <RadzenPanelMenuItem Text="Inicio" Icon="home" Path="/" />
