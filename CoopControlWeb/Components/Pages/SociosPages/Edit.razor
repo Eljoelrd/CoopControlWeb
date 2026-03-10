@@ -135,6 +135,13 @@
 
             try
             {
+                // LIMPIEZA DE DATOS: Quitamos guiones y formatos para que quepan en la DB
+                if (!string.IsNullOrEmpty(Socios.Cedula))
+                    Socios.Cedula = Socios.Cedula.Replace("-", "").Replace("_", "").Trim();
+
+                if (!string.IsNullOrEmpty(Socios.Telefono))
+                    Socios.Telefono = Socios.Telefono.Replace("(", "").Replace(")", "").Replace("-", "").Replace(" ", "").Trim();
+
                 await context.SaveChangesAsync();
                 NavigationManager.NavigateTo("/socios");
             }
