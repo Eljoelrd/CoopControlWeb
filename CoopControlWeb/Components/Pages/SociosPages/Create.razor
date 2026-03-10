@@ -7,128 +7,163 @@
 
 <PageTitle>Nuevo Socio</PageTitle>
 
-<div class="rz-p-0 rz-p-md-6">
+<div class="rz-p-0 rz-p-md-12">
     <RadzenRow JustifyContent="JustifyContent.Center">
-        <RadzenColumn Size="12" SizeLG="10">
-            <RadzenTemplateForm TItem="Socios" Data="@socio" Submit="@AddSocios">
+        <RadzenColumn Size="12" SizeMD="10" SizeLG="8">
+
+            <RadzenTemplateForm TItem="Socios" Data="@Socios" Submit="@AddSocios">
                 <RadzenCard Class="rz-shadow-10 rz-border-radius-2 rz-p-0">
-                    @* Cabecera *@
-                    <div style="background-color: var(--rz-primary); height: 8px; width: 100%;"></div>
+
+                    @* Cabecera con Color de Acento *@
+                    <div style="background-color: var(--rz-primary); height: 10px; width: 100%;"></div>
 
                     <div class="rz-p-6 rz-p-md-10">
                         <RadzenStack Gap="0.5rem" Class="rz-mb-6">
-                            <RadzenText TextStyle="TextStyle.H4" TagName="TagName.H1" Class="rz-m-0">Registro de Nuevo Socio</RadzenText>
-                            <RadzenText TextStyle="TextStyle.Body2" Class="rz-color-text-secondary">Complete todos los campos para evitar errores de integridad en la base de datos.</RadzenText>
+                            <RadzenText TextStyle="TextStyle.H4" TagName="TagName.H1" Class="rz-m-0">Crear Socio</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body2" Class="rz-color-text-secondary">Ingrese los datos para registrar un nuevo miembro en la cooperativa.</RadzenText>
                         </RadzenStack>
 
-                        <RadzenRow Gap="1rem">
-                            @* --- SECCIÓN: DATOS PERSONALES --- *@
-                            <RadzenColumn Size="12" SizeMD="6">
-                                <RadzenStack Gap="1rem">
+                        <RadzenStack Gap="1.5rem">
+
+                            @* Sección: Datos de Identidad *@
+                            <div class="rz-display-flex rz-align-items-center rz-mb-2">
+                                <RadzenIcon Icon="badge" Class="rz-me-2" />
+                                <RadzenText TextStyle="TextStyle.Subtitle1" Class="rz-m-0"><b>Identidad</b></RadzenText>
+                            </div>
+
+                            <RadzenRow>
+                                <RadzenColumn Size="12" SizeMD="4">
                                     <RadzenFormField Text="Cédula" Variant="Variant.Outlined" Style="width: 100%;">
-                                        <RadzenMask Mask="000-0000000-0" CharacterPattern="[0-9]" @bind-Value="socio.Cedula" Name="Cedula" />
+                                        <RadzenMask Mask="***-*******-*" CharacterPattern="[0-9]" @bind-Value="Socios.Cedula" Name="Cedula" />
                                     </RadzenFormField>
-
+                                    <RadzenRequiredValidator Component="Cedula" Text="La cédula es obligatoria" />
+                                </RadzenColumn>
+                                <RadzenColumn Size="12" SizeMD="4">
                                     <RadzenFormField Text="Nombre" Variant="Variant.Outlined" Style="width: 100%;">
-                                        <RadzenTextBox @bind-Value="socio.Nombre" Name="Nombre" />
+                                        <RadzenTextBox @bind-Value="Socios.Nombre" Name="Nombre" />
                                     </RadzenFormField>
-
+                                    <RadzenRequiredValidator Component="Nombre" Text="Campo requerido" />
+                                </RadzenColumn>
+                                <RadzenColumn Size="12" SizeMD="4">
                                     <RadzenFormField Text="Apellido" Variant="Variant.Outlined" Style="width: 100%;">
-                                        <RadzenTextBox @bind-Value="socio.Apellido" Name="Apellido" />
+                                        <RadzenTextBox @bind-Value="Socios.Apellido" Name="Apellido" />
                                     </RadzenFormField>
+                                    <RadzenRequiredValidator Component="Apellido" Text="Campo requerido" />
+                                </RadzenColumn>
+                            </RadzenRow>
 
-                                    <RadzenFormField Text="Fecha de Nacimiento" Variant="Variant.Outlined" Style="width: 100%;">
-                                        <RadzenDatePicker @bind-Value="socio.FechaNacimiento" DateFormat="dd/MM/yyyy" />
+                            @* Sección: Perfil Personal *@
+                            <div class="rz-display-flex rz-align-items-center rz-mt-4 rz-mb-2">
+                                <RadzenIcon Icon="person" Class="rz-me-2" />
+                                <RadzenText TextStyle="TextStyle.Subtitle1" Class="rz-m-0"><b>Información Personal</b></RadzenText>
+                            </div>
+
+                            <RadzenRow>
+                                <RadzenColumn Size="12" SizeMD="4">
+                                    <RadzenFormField Text="Sexo" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenDropDown @bind-Value="Socios.Sexo" Data="@(new[] { "Masculino", "Femenino" })" Name="Sexo" />
                                     </RadzenFormField>
-                                </RadzenStack>
-                            </RadzenColumn>
-
-                            @* --- SECCIÓN: DATOS DE CONTACTO Y ESTADO --- *@
-                            <RadzenColumn Size="12" SizeMD="6">
-                                <RadzenStack Gap="1rem">
-                                    <RadzenFormField Text="Teléfono" Variant="Variant.Outlined" Style="width: 100%;">
-                                        <RadzenMask Mask="(000) 000-0000" CharacterPattern="[0-9]" @bind-Value="socio.Telefono" />
-                                    </RadzenFormField>
-
-                                    <RadzenFormField Text="Email" Variant="Variant.Outlined" Style="width: 100%;">
-                                        <RadzenTextBox @bind-Value="socio.Email" />
-                                    </RadzenFormField>
-
-                                    <RadzenRow>
-                                        <RadzenColumn Size="6">
-                                            <RadzenFormField Text="Sexo" Variant="Variant.Outlined" Style="width: 100%;">
-                                                <RadzenDropDown @bind-Value="socio.Sexo" Data="@(new[] { "Masculino", "Femenino" })" />
-                                            </RadzenFormField>
-                                        </RadzenColumn>
-                                        <RadzenColumn Size="6">
-                                            <RadzenFormField Text="Tipo Sangre" Variant="Variant.Outlined" Style="width: 100%;">
-                                                <RadzenDropDown @bind-Value="socio.TipoSangre" Data="@(new[] { "A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-" })" />
-                                            </RadzenFormField>
-                                        </RadzenColumn>
-                                    </RadzenRow>
-
+                                    <RadzenRequiredValidator Component="Sexo" Text="Requerido" />
+                                </RadzenColumn>
+                                <RadzenColumn Size="12" SizeMD="4">
                                     <RadzenFormField Text="Estado Civil" Variant="Variant.Outlined" Style="width: 100%;">
-                                        <RadzenDropDown @bind-Value="socio.EstadoCivil" Data="@(new[] { "Soltero(a)", "Casado(a)", "Divorciado(a)", "Viudo(a)", "Unión Libre" })" />
+                                        <RadzenDropDown @bind-Value="Socios.EstadoCivil" Data="@(new[] { "Soltero(a)", "Casado(a)", "Divorciado(a)", "Viudo(a)", "Unión Libre" })" Name="EstadoCivil" />
                                     </RadzenFormField>
-                                </RadzenStack>
-                            </RadzenColumn>
+                                    <RadzenRequiredValidator Component="EstadoCivil" Text="Requerido" />
+                                </RadzenColumn>
+                                <RadzenColumn Size="12" SizeMD="4">
+                                    <RadzenFormField Text="Tipo de Sangre" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenDropDown @bind-Value="Socios.TipoSangre" Data="@(new[] { "A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-" })" />
+                                    </RadzenFormField>
+                                </RadzenColumn>
+                            </RadzenRow>
 
-                            @* --- SECCIÓN: DIRECCIÓN Y OTROS --- *@
-                            <RadzenColumn Size="12">
-                                <RadzenRow>
-                                    <RadzenColumn Size="12" SizeMD="6">
-                                        <RadzenFormField Text="Nacionalidad" Variant="Variant.Outlined" Style="width: 100%;">
-                                            <RadzenTextBox @bind-Value="socio.Nacionalidad" />
-                                        </RadzenFormField>
-                                    </RadzenColumn>
-                                    <RadzenColumn Size="12" SizeMD="6">
-                                        <RadzenFormField Text="Fecha de Ingreso" Variant="Variant.Outlined" Style="width: 100%;">
-                                            <RadzenDatePicker @bind-Value="socio.FechaIngreso" DateFormat="dd/MM/yyyy" />
-                                        </RadzenFormField>
-                                    </RadzenColumn>
-                                </RadzenRow>
+                            <RadzenRow>
+                                <RadzenColumn Size="12" SizeMD="4">
+                                    <RadzenFormField Text="Nacionalidad" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenTextBox @bind-Value="Socios.Nacionalidad" Name="Nacionalidad" />
+                                    </RadzenFormField>
+                                </RadzenColumn>
+                                <RadzenColumn Size="12" SizeMD="4">
+                                    <RadzenFormField Text="Fecha de Nacimiento" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenDatePicker @bind-Value="Socios.FechaNacimiento" DateFormat="dd/MM/yyyy" />
+                                    </RadzenFormField>
+                                </RadzenColumn>
+                                <RadzenColumn Size="12" SizeMD="4">
+                                    <RadzenFormField Text="Fecha de Ingreso" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenDatePicker @bind-Value="Socios.FechaIngreso" DateFormat="dd/MM/yyyy" />
+                                    </RadzenFormField>
+                                </RadzenColumn>
+                            </RadzenRow>
 
-                                <RadzenFormField Text="Dirección Completa" Variant="Variant.Outlined" Class="rz-mt-4" Style="width: 100%;">
-                                    <RadzenTextArea @bind-Value="socio.Direccion" Rows="2" />
-                                </RadzenFormField>
-                            </RadzenColumn>
-                        </RadzenRow>
+                            @* Sección: Contacto *@
+                            <div class="rz-display-flex rz-align-items-center rz-mt-4 rz-mb-2">
+                                <RadzenIcon Icon="contact_mail" Class="rz-me-2" />
+                                <RadzenText TextStyle="TextStyle.Subtitle1" Class="rz-m-0"><b>Contacto</b></RadzenText>
+                            </div>
 
-                        @* Botones *@
-                        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Class="rz-mt-8">
-                            <RadzenButton Text="Cancelar" Icon="cancel" ButtonStyle="ButtonStyle.Light" Variant="Variant.Text"
-                                          Click="@(() => NavigationManager.NavigateTo("/socios"))" />
-                            <RadzenButton ButtonType="ButtonType.Submit" Text="Registrar Socio" Icon="check_circle"
-                                          ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Large" />
+                            <RadzenRow>
+                                <RadzenColumn Size="12" SizeMD="6">
+                                    <RadzenFormField Text="Teléfono" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenMask Mask="(***) ***-****" CharacterPattern="[0-9]" @bind-Value="Socios.Telefono" />
+                                    </RadzenFormField>
+                                </RadzenColumn>
+                                <RadzenColumn Size="12" SizeMD="6">
+                                    <RadzenFormField Text="Correo Electrónico" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenTextBox @bind-Value="Socios.Email" Name="Email" />
+                                    </RadzenFormField>
+                                    <RadzenEmailValidator Component="Email" Text="Email inválido" />
+                                </RadzenColumn>
+                            </RadzenRow>
+
+                            <RadzenFormField Text="Dirección" Variant="Variant.Outlined" Style="width: 100%;">
+                                <RadzenTextArea @bind-Value="Socios.Direccion" Rows="2" />
+                            </RadzenFormField>
+
+                            @* Botones *@
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Class="rz-mt-6">
+                                <RadzenButton Text="Volver" Icon="arrow_back" ButtonStyle="ButtonStyle.Light" Variant="Variant.Text"
+                                              Click="@(() => NavigationManager.NavigateTo("/socios"))" />
+                                <RadzenButton ButtonType="ButtonType.Submit" Text="Guardar Socio" Icon="save"
+                                              ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Large" Style="border-radius: 25px; padding: 0 2rem;" />
+                            </RadzenStack>
+
                         </RadzenStack>
                     </div>
                 </RadzenCard>
             </RadzenTemplateForm>
+
         </RadzenColumn>
     </RadzenRow>
 </div>
 
 @code {
-    private Socios socio { get; set; } = new()
-    {
-        FechaNacimiento = DateTime.Today.AddYears(-18),
+    private Socios Socios { get; set; } = new() 
+    { 
+        FechaNacimiento = DateTime.Today.AddYears(-18), 
         FechaIngreso = DateTime.Today,
-        Nacionalidad = "Dominicana" // Valor por defecto útil
+        Nacionalidad = "Dominicana"
     };
 
     private async Task AddSocios()
     {
-        try
+        try 
         {
+            // LIMPIEZA DE DATOS: Quitamos guiones y formatos para que quepan en la DB
+            if (!string.IsNullOrEmpty(Socios.Cedula))
+                Socios.Cedula = Socios.Cedula.Replace("-", "").Replace("_", "").Trim();
+
+            if (!string.IsNullOrEmpty(Socios.Telefono))
+                Socios.Telefono = Socios.Telefono.Replace("(", "").Replace(")", "").Replace("-", "").Replace(" ", "").Trim();
+
             using var context = DbFactory.CreateDbContext();
-            context.Socios.Add(socio);
+            context.Socios.Add(Socios);
             await context.SaveChangesAsync();
             NavigationManager.NavigateTo("/socios");
         }
         catch (Exception ex)
         {
-            // Aquí se puede agregar un RadzenNotification para mostrar el error
-            Console.WriteLine(ex.Message);
+            Console.WriteLine($"Error al guardar: {ex.Message}");
         }
     }
 }
