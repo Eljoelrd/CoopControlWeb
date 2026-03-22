@@ -5,55 +5,95 @@
 @inject IDbContextFactory<AppDBContext> DbFactory
 @inject NavigationManager NavigationManager
 
-<PageTitle>Prototipo - Nuevo Préstamo</PageTitle>
+<PageTitle>Nuevo Préstamo</PageTitle>
 
 <div class="rz-p-0 rz-p-md-12">
     <RadzenRow JustifyContent="JustifyContent.Center">
-        <RadzenColumn Size="12" SizeMD="8" SizeLG="6">
+        <RadzenColumn Size="12" SizeMD="10" SizeLG="8">
 
             <RadzenTemplateForm TItem="Prestamo" Data="@prestamo" Submit="@AddPrestamo">
                 <RadzenCard Class="rz-shadow-10 rz-border-radius-2 rz-p-0">
+                    
+                    @* Barra de acento (Azul Primario para Créditos) *@
                     <div style="background-color: var(--rz-primary); height: 10px; width: 100%;"></div>
 
                     <div class="rz-p-6 rz-p-md-10">
-                        <RadzenText TextStyle="TextStyle.H4" Class="rz-mb-6">Solicitud de Préstamo</RadzenText>
+                        <RadzenStack Gap="0.5rem" Class="rz-mb-6">
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                <RadzenIcon Icon="account_balance_wallet" Style="color: var(--rz-primary); font-size: 2rem;" />
+                                <RadzenText TextStyle="TextStyle.H4" TagName="TagName.H1" Class="rz-m-0">Nueva Solicitud de Préstamo</RadzenText>
+                            </RadzenStack>
+                            <RadzenText TextStyle="TextStyle.Body2" Class="rz-color-text-secondary">Complete los datos financieros para la aprobación del crédito.</RadzenText>
+                        </RadzenStack>
 
                         <RadzenStack Gap="1.5rem">
-                            @* Socio *@
-                            <RadzenFormField Text="Socio Solicitante" Variant="Variant.Outlined" Style="width: 100%;">
-                                <RadzenDropDown @bind-Value="prestamo.SocioId" Data="@socios"
-                                                TextProperty="Nombre" ValueProperty="Id"
-                                                AllowFiltering="true" Placeholder="Seleccione un socio" Class="w-100">
-                                    <Template Context="s">
-                                        @((s as Socios).Nombre) @((s as Socios).Apellido)
-                                    </Template>
-                                </RadzenDropDown>
-                            </RadzenFormField>
-
-                            @* Monto y Fecha *@
+                            
+                            @* Fila 1: Socio y Tipo *@
                             <RadzenRow>
-                                <RadzenColumn Size="12" SizeMD="6">
-                                    <RadzenFormField Text="Monto Solicitado" Variant="Variant.Outlined" Style="width: 100%;">
-                                        <RadzenNumeric @bind-Value="prestamo.Monto" TValue="decimal" ShowUpDown="false" />
+                                <RadzenColumn Size="12" SizeMD="8">
+                                    <RadzenFormField Text="Socio Solicitante" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenDropDown @bind-Value="prestamo.SocioId" Data="@socios" 
+                                                       TextProperty="NombreCompleto" ValueProperty="Id" 
+                                                       AllowFiltering="true" Placeholder="Seleccione un socio..." Name="SocioId" />
                                     </RadzenFormField>
+                                    <RadzenRequiredValidator Component="SocioId" Text="El socio es obligatorio" DefaultValue="0" />
                                 </RadzenColumn>
-                                <RadzenColumn Size="12" SizeMD="6">
-                                    <RadzenFormField Text="Fecha Desembolso" Variant="Variant.Outlined" Style="width: 100%;">
-                                        <RadzenDatePicker @bind-Value="prestamo.FechaPrestamo" DateFormat="dd/MM/yyyy" />
+                                <RadzenColumn Size="12" SizeMD="4">
+                                    <RadzenFormField Text="Tipo de Préstamo" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenDropDown @bind-Value="prestamo.TipoPrestamo" Data="@(new[] { "Personal", "Comercial", "Vivienda", "Vehículo" })" />
                                     </RadzenFormField>
                                 </RadzenColumn>
                             </RadzenRow>
 
-                            @* Estado Inicial *@
-                            <RadzenFormField Text="Estado del Préstamo" Variant="Variant.Outlined" Style="width: 100%;">
-                                <RadzenDropDown @bind-Value="prestamo.Estado" Data="@(new[] { "Pendiente", "Activo" })" />
+                            @* Fila 2: Montos e Interés *@
+                            <RadzenRow>
+                                <RadzenColumn Size="12" SizeMD="4">
+                                    <RadzenFormField Text="Monto Solicitado" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenNumeric @bind-Value="prestamo.Monto" Format="c" Placeholder="0.00" Name="Monto" />
+                                    </RadzenFormField>
+                                    <RadzenRequiredValidator Component="Monto" Text="Monto requerido" />
+                                </RadzenColumn>
+                                <RadzenColumn Size="12" SizeMD="4">
+                                    <RadzenFormField Text="Tasa Interés (%)" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenNumeric @bind-Value="prestamo.TasaInteres" Max="100" Min="0" Step="0.1" Placeholder="0.0" />
+                                    </RadzenFormField>
+                                </RadzenColumn>
+                                <RadzenColumn Size="12" SizeMD="4">
+                                    <RadzenFormField Text="Plazo (Meses)" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenNumeric @bind-Value="prestamo.PlazoMeses" Min="1" Max="360" />
+                                    </RadzenFormField>
+                                </RadzenColumn>
+                            </RadzenRow>
+
+                            @* Fila 3: Fechas y Pago *@
+                            <RadzenRow>
+                                <RadzenColumn Size="12" SizeMD="4">
+                                    <RadzenFormField Text="Fecha Préstamo" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenDatePicker @bind-Value="prestamo.FechaPrestamo" DateFormat="dd/MM/yyyy" />
+                                    </RadzenFormField>
+                                </RadzenColumn>
+                                <RadzenColumn Size="12" SizeMD="4">
+                                    <RadzenFormField Text="Método de Pago" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenDropDown @bind-Value="prestamo.MetodoPagoPreferido" Data="@(new[] { "Efectivo", "Transferencia", "Nómina" })" />
+                                    </RadzenFormField>
+                                </RadzenColumn>
+                                <RadzenColumn Size="12" SizeMD="4">
+                                    <RadzenFormField Text="Estado Inicial" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenDropDown @bind-Value="prestamo.Estado" Data="@(new[] { "Activo", "Pendiente", "Cerrado" })" />
+                                    </RadzenFormField>
+                                </RadzenColumn>
+                            </RadzenRow>
+
+                            <RadzenFormField Text="Observaciones" Variant="Variant.Outlined" Style="width: 100%;">
+                                <RadzenTextArea @bind-Value="prestamo.Observaciones" Rows="2" />
                             </RadzenFormField>
 
                             <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Class="rz-mt-6">
-                                <RadzenButton Text="Volver" ButtonStyle="ButtonStyle.Light" Variant="Variant.Text"
+                                <RadzenButton Text="Volver" Icon="arrow_back" ButtonStyle="ButtonStyle.Light" Variant="Variant.Text"
                                               Click="@(() => NavigationManager.NavigateTo("/prestamos"))" />
-                                <RadzenButton ButtonType="ButtonType.Submit" Text="Generar Préstamo"
-                                              ButtonStyle="ButtonStyle.Primary" Style="border-radius: 20px;" />
+                                <RadzenButton ButtonType="ButtonType.Submit" Text="Generar Préstamo" Icon="assignment_turned_in"
+                                              ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Large" 
+                                              Style="border-radius: 25px; padding: 0 2rem;" />
                             </RadzenStack>
                         </RadzenStack>
                     </div>
@@ -65,20 +105,25 @@
 </div>
 
 @code {
-    private Prestamo prestamo = new() { FechaPrestamo = DateTime.Today, Estado = "Activo" };
-    private List<Socios> socios = new();
+    private Prestamo prestamo = new() { FechaPrestamo = DateTime.Today, Estado = "Activo", TipoPrestamo = "Personal" };
+    private List<SocioDisplay> socios = new();
 
     protected override async Task OnInitializedAsync()
     {
         using var context = DbFactory.CreateDbContext();
-        socios = await context.Socios.ToListAsync();
+        socios = await context.Socios
+            .Select(s => new SocioDisplay { Id = s.Id, NombreCompleto = s.Nombre + " " + s.Apellido })
+            .ToListAsync();
     }
 
     private async Task AddPrestamo()
     {
         using var context = DbFactory.CreateDbContext();
+        prestamo.FechaCreacion = DateTime.Now;
         context.Prestamos.Add(prestamo);
         await context.SaveChangesAsync();
         NavigationManager.NavigateTo("/prestamos");
     }
+
+    public class SocioDisplay { public int Id { get; set; } public string NombreCompleto { get; set; } }
 }
