@@ -1,12 +1,11 @@
 ﻿@page "/aportes/edit"
 @rendermode InteractiveServer
-@using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 @using CoopControlWeb.Modelos
 @inject IDbContextFactory<AppDBContext> DbFactory
 @inject NavigationManager NavigationManager
 
-<PageTitle>Prototipo - Editar Aporte</PageTitle>
+<PageTitle>Editar Aporte</PageTitle>
 
 <div class="rz-p-0 rz-p-md-12">
     <RadzenRow JustifyContent="JustifyContent.Center">
@@ -24,69 +23,50 @@
                 <RadzenTemplateForm TItem="Aporte" Data="@Aporte" Submit="@UpdateAporte">
                     <RadzenCard Class="rz-shadow-10 rz-border-radius-2 rz-p-0">
                         
-                        @* Barra de acento (Ámbar para edición financiera) *@
                         <div style="background-color: var(--rz-warning); height: 10px; width: 100%;"></div>
                         
                         <div class="rz-p-6 rz-p-md-10">
                             <RadzenStack Gap="0.5rem" Class="rz-mb-6">
                                 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                                    <RadzenIcon Icon="edit_notifications" Style="color: var(--rz-warning); font-size: 2rem;" />
-                                    <RadzenText TextStyle="TextStyle.H4" TagName="TagName.H1" Class="rz-m-0">Corregir Aporte</RadzenText>
+                                    <RadzenIcon Icon="edit" Style="color: var(--rz-warning); font-size: 2rem;" />
+                                    <RadzenText TextStyle="TextStyle.H4" TagName="TagName.H1" Class="rz-m-0">Modificar Aporte</RadzenText>
                                 </RadzenStack>
-                                <RadzenText TextStyle="TextStyle.Body2" Class="rz-color-text-secondary">
-                                    ID de Transacción: #@Aporte.Id | Ajuste los valores necesarios.
-                                </RadzenText>
+                                <RadzenText TextStyle="TextStyle.Body2" Class="rz-color-text-secondary">ID de Transacción: #@Aporte.Id</RadzenText>
                             </RadzenStack>
 
                             <RadzenStack Gap="1.5rem">
                                 
-                                @* Socio (Deshabilitado en edición para mantener integridad) *@
-                                <RadzenFormField Text="Socio Relacionado" Variant="Variant.Outlined" Style="width: 100%;">
-                                    <ChildContent>
-                                        <RadzenDropDown @bind-Value="Aporte.SocioId" Data="@socios" 
-                                                        TextProperty="Nombre" ValueProperty="Id" 
-                                                        Disabled="true" Class="w-100">
-                                            <Template Context="s">
-                                                @((s as Socios).Nombre) @((s as Socios).Apellido)
-                                            </Template>
-                                        </RadzenDropDown>
-                                    </ChildContent>
-                                    <Helper>
-                                        <RadzenText TextStyle="TextStyle.Caption">El socio no puede cambiarse tras el registro inicial.</RadzenText>
-                                    </Helper>
+                                <RadzenFormField Text="Socio" Variant="Variant.Outlined" Style="width: 100%;">
+                                    <RadzenDropDown @bind-Value="Aporte.SocioId" Data="@socios" 
+                                                   TextProperty="NombreCompleto" ValueProperty="Id" 
+                                                   AllowFiltering="true" Name="SocioId" />
                                 </RadzenFormField>
 
                                 <RadzenRow>
                                     <RadzenColumn Size="12" SizeMD="6">
-                                        <RadzenFormField Text="Monto Correcto (RD$)" Variant="Variant.Outlined" Style="width: 100%;">
-                                            <ChildContent>
-                                                <RadzenNumeric @bind-Value="Aporte.Monto" Name="Monto" ShowUpDown="false" TValue="decimal" />
-                                            </ChildContent>
+                                        <RadzenFormField Text="Monto (RD$)" Variant="Variant.Outlined" Style="width: 100%;">
+                                            <RadzenNumeric @bind-Value="Aporte.Monto" Format="c" Name="Monto" />
                                         </RadzenFormField>
-                                        <RadzenRequiredValidator Component="Monto" Text="El monto no puede estar vacío" />
                                     </RadzenColumn>
-                                    
                                     <RadzenColumn Size="12" SizeMD="6">
-                                        <RadzenFormField Text="Fecha" Variant="Variant.Outlined" Style="width: 100%;">
-                                            <ChildContent>
-                                                <RadzenDatePicker @bind-Value="Aporte.Fecha" DateFormat="dd/MM/yyyy" Name="Fecha" />
-                                            </ChildContent>
+                                        <RadzenFormField Text="Tipo" Variant="Variant.Outlined" Style="width: 100%;">
+                                            <RadzenDropDown @bind-Value="Aporte.Tipo" Data="@(new[] { "Ordinario", "Extraordinario" })" />
                                         </RadzenFormField>
                                     </RadzenColumn>
                                 </RadzenRow>
 
-                                <RadzenFormField Text="Categoría de Aporte" Variant="Variant.Outlined" Style="width: 100%;">
-                                    <ChildContent>
-                                        <RadzenDropDown @bind-Value="Aporte.Tipo" Data="@(new[] { "Ordinario", "Extraordinario", "Especial" })" />
-                                    </ChildContent>
+                                <RadzenFormField Text="Fecha" Variant="Variant.Outlined" Style="width: 100%;">
+                                    <RadzenDatePicker @bind-Value="Aporte.Fecha" DateFormat="dd/MM/yyyy" />
                                 </RadzenFormField>
 
-                                @* Botones de Prototipo *@
+                                <RadzenFormField Text="Concepto" Variant="Variant.Outlined" Style="width: 100%;">
+                                    <RadzenTextBox @bind-Value="Aporte.Concepto" />
+                                </RadzenFormField>
+
                                 <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Class="rz-mt-6">
-                                    <RadzenButton Text="Descartar Cambios" Icon="cancel" ButtonStyle="ButtonStyle.Light" Variant="Variant.Text" 
+                                    <RadzenButton Text="Cancelar" Icon="cancel" ButtonStyle="ButtonStyle.Light" Variant="Variant.Text"
                                                   Click="@(() => NavigationManager.NavigateTo("/aportes"))" />
-                                    
-                                    <RadzenButton ButtonType="ButtonType.Submit" Text="Guardar Ajustes" Icon="save" 
+                                    <RadzenButton ButtonType="ButtonType.Submit" Text="Actualizar Datos" Icon="save" 
                                                   ButtonStyle="ButtonStyle.Warning" Size="ButtonSize.Large" 
                                                   Style="border-radius: 25px; padding: 0 2rem; color: black;" />
                                 </RadzenStack>
@@ -103,23 +83,19 @@
 
 @code {
     [SupplyParameterFromQuery]
-    private int Id { get; set; }
-
-    [SupplyParameterFromForm]
+    [Parameter] public int Id { get; set; }
     private Aporte? Aporte { get; set; }
-
-    private List<Socios> socios = new();
+    private List<SocioDisplay> socios = new();
 
     protected override async Task OnInitializedAsync()
     {
         using var context = DbFactory.CreateDbContext();
-        Aporte ??= await context.Aportes.FirstOrDefaultAsync(m => m.Id == Id);
-        socios = await context.Socios.ToListAsync();
+        Aporte = await context.Aportes.FirstOrDefaultAsync(m => m.Id == Id);
+        socios = await context.Socios
+            .Select(s => new SocioDisplay { Id = s.Id, NombreCompleto = s.Nombre + " " + s.Apellido })
+            .ToListAsync();
 
-        if (Aporte == null)
-        {
-            NavigationManager.NavigateTo("/aportes");
-        }
+        if (Aporte == null) NavigationManager.NavigateTo("/aportes");
     }
 
     private async Task UpdateAporte()
@@ -128,16 +104,13 @@
         {
             using var context = DbFactory.CreateDbContext();
             context.Attach(Aporte).State = EntityState.Modified;
-
-            try
-            {
-                await context.SaveChangesAsync();
-                NavigationManager.NavigateTo("/aportes");
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                throw;
-            }
+            await context.SaveChangesAsync();
+            NavigationManager.NavigateTo("/aportes");
         }
+    }
+
+    public class SocioDisplay { 
+        public int Id { get; set; } 
+        public string NombreCompleto { get; set; } 
     }
 }

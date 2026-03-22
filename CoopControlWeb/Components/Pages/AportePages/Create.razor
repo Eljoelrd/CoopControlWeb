@@ -1,12 +1,11 @@
 ﻿@page "/aportes/create"
 @rendermode InteractiveServer
-@using Microsoft.AspNetCore.Authorization
 @using Microsoft.EntityFrameworkCore
 @using CoopControlWeb.Modelos
 @inject IDbContextFactory<AppDBContext> DbFactory
 @inject NavigationManager NavigationManager
 
-<PageTitle>Prototipo - Nuevo Aporte</PageTitle>
+<PageTitle>Nuevo Aporte</PageTitle>
 
 <div class="rz-p-0 rz-p-md-12">
     <RadzenRow JustifyContent="JustifyContent.Center">
@@ -22,51 +21,43 @@
                         <RadzenStack Gap="0.5rem" Class="rz-mb-6">
                             <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
                                 <RadzenIcon Icon="paid" Style="color: var(--rz-success); font-size: 2rem;" />
-                                <RadzenText TextStyle="TextStyle.H4" TagName="TagName.H1" Class="rz-m-0">Registro de Aporte</RadzenText>
+                                <RadzenText TextStyle="TextStyle.H4" TagName="TagName.H1" Class="rz-m-0">Registrar Aporte</RadzenText>
                             </RadzenStack>
-                            <RadzenText TextStyle="TextStyle.Body2" Class="rz-color-text-secondary">
-                                Fase Experimental: Ingrese los detalles de la transacción financiera.
-                            </RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body2" Class="rz-color-text-secondary">Seleccione el socio y el monto correspondiente al aporte.</RadzenText>
                         </RadzenStack>
 
                         <RadzenStack Gap="1.5rem">
-
+                            
                             @* Selección de Socio *@
                             <RadzenFormField Text="Seleccionar Socio" Variant="Variant.Outlined" Style="width: 100%;">
-                                <ChildContent>
-                                    <RadzenDropDown @bind-Value="Aporte.SocioId" Data="@socios"
-                                                    TextProperty="Nombre" ValueProperty="Id"
-                                                    AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
-                                                    Placeholder="Busque un socio..." Name="SocioId" Class="w-100">
-                                        <Template Context="s">
-                                            @((s as Socios).Nombre) @((s as Socios).Apellido)
-                                        </Template>
-                                    </RadzenDropDown>
-                                </ChildContent>
-                                <Helper>
-                                    <RadzenRequiredValidator Component="SocioId" Text="Debe seleccionar un socio" DefaultValue="0" />
-                                </Helper>
+                                <RadzenDropDown @bind-Value="Aporte.SocioId" Data="@socios" 
+                                               TextProperty="NombreCompleto" ValueProperty="Id" 
+                                               AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                               Placeholder="Busque por nombre o apellido..." Name="SocioId" />
                             </RadzenFormField>
+                            <RadzenRequiredValidator Component="SocioId" Text="Debe seleccionar un socio" DefaultValue="0" />
 
                             <RadzenRow>
                                 <RadzenColumn Size="12" SizeMD="6">
-                                    @* Monto *@
                                     <RadzenFormField Text="Monto (RD$)" Variant="Variant.Outlined" Style="width: 100%;">
-                                        <RadzenNumeric @bind-Value="Aporte.Monto" Name="Monto" ShowUpDown="false" TValue="decimal" />
+                                        <RadzenNumeric @bind-Value="Aporte.Monto" Format="c" Placeholder="0.00" Name="Monto" />
                                     </RadzenFormField>
-                                    <RadzenRequiredValidator Component="Monto" Text="El monto es obligatorio" />
+                                    <RadzenRequiredValidator Component="Monto" Text="Monto requerido" />
                                 </RadzenColumn>
                                 <RadzenColumn Size="12" SizeMD="6">
-                                    @* Fecha *@
-                                    <RadzenFormField Text="Fecha de Transacción" Variant="Variant.Outlined" Style="width: 100%;">
-                                        <RadzenDatePicker @bind-Value="Aporte.Fecha" DateFormat="dd/MM/yyyy" Name="Fecha" />
+                                    <RadzenFormField Text="Tipo de Aporte" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenDropDown @bind-Value="Aporte.Tipo" Data="@(new[] { "Ordinario", "Extraordinario" })" Name="Tipo" />
                                     </RadzenFormField>
+                                    <RadzenRequiredValidator Component="Tipo" Text="Seleccione el tipo" />
                                 </RadzenColumn>
                             </RadzenRow>
 
-                            @* Tipo de Aporte *@
-                            <RadzenFormField Text="Tipo de Aporte" Variant="Variant.Outlined" Style="width: 100%;">
-                                <RadzenDropDown @bind-Value="Aporte.Tipo" Data="@(new[] { "Ordinario", "Extraordinario", "Especial" })" Name="Tipo" />
+                            <RadzenFormField Text="Fecha del Aporte" Variant="Variant.Outlined" Style="width: 100%;">
+                                <RadzenDatePicker @bind-Value="Aporte.Fecha" DateFormat="dd/MM/yyyy" ShowTime="false" />
+                            </RadzenFormField>
+
+                            <RadzenFormField Text="Concepto / Detalle" Variant="Variant.Outlined" Style="width: 100%;">
+                                <RadzenTextBox @bind-Value="Aporte.Concepto" MaxLength="100" />
                             </RadzenFormField>
 
                             @* Botones *@
@@ -88,15 +79,17 @@
 </div>
 
 @code {
-    [SupplyParameterFromForm]
-    private Aporte Aporte { get; set; } = new() { Fecha = DateTime.Today };
-
-    private List<Socios> socios = new();
+    private Aporte Aporte { get; set; } = new() { Fecha = DateTime.Today, SocioId = 0 };
+    
+    // Lista local de socios con propiedad calculada para el Dropdown
+    private List<SocioDisplay> socios = new();
 
     protected override async Task OnInitializedAsync()
     {
         using var context = DbFactory.CreateDbContext();
-        socios = await context.Socios.ToListAsync();
+        socios = await context.Socios
+            .Select(s => new SocioDisplay { Id = s.Id, NombreCompleto = s.Nombre + " " + s.Apellido })
+            .ToListAsync();
     }
 
     private async Task AddAporte()
@@ -105,5 +98,11 @@
         context.Aportes.Add(Aporte);
         await context.SaveChangesAsync();
         NavigationManager.NavigateTo("/aportes");
+    }
+
+    // Clase auxiliar para el dropdown
+    public class SocioDisplay { 
+        public int Id { get; set; } 
+        public string NombreCompleto { get; set; } 
     }
 }
