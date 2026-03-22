@@ -2,54 +2,195 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
 @using CoopControlWeb.Modelos
+@using System.ComponentModel.DataAnnotations
+@using Radzen
+@using Radzen.Blazor
 @inject AuthenticationStateProvider AuthProvider
 @inject UserService userService
 
 @rendermode InteractiveServer
 
-<h3>Mi Perfil</h3>
+<PageTitle>Mi Perfil</PageTitle>
 
-@if (user is not null && user.Identity is not null && user.Identity.IsAuthenticated)
-{
-    <div class="card p-3">
-        <h5>Datos Personales</h5>
-        @if (dbUser is not null)
-        {
-            <p><b>Nombre:</b> @dbUser.Nombre @dbUser.Apellido</p>
-        }
-        <p><b>Email:</b> @user.Identity.Name</p>
-        <p><b>Rol:</b> @role</p>
+<div class="container mt-4">
+    <RadzenText TextStyle="TextStyle.H3" TagName="TagName.H3" Class="rz-mb-4">Mi Perfil</RadzenText>
 
-        @if (user.IsInRole("Admin"))
-        {
-            <p>Eres administrador, puedes gestionar cualquier socio.</p>
-        }
-        else
-        {
-            <p>Eres usuario normal, solo puedes ver y editar tu información.</p>
-        }
-    </div>
-}
-else
-{
-    <p>No has iniciado sesión.</p>
-}
+    @if (user is not null && user.Identity is not null && user.Identity.IsAuthenticated)
+    {
+        <RadzenRow Gap="1rem">
+            <RadzenColumn Size="12" SizeMD="4">
+                <RadzenCard Class="rz-mb-4 rz-text-align-center">
+                    <RadzenImage Path="https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg" Style="width: 150px; height: 150px; border-radius: 50%;" Class="rz-mb-3" />
+                    @if (dbUser is not null)
+                    {
+                        <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-0">@dbUser.Nombre @dbUser.Apellido</RadzenText>
+                    }
+                    <RadzenText TextStyle="TextStyle.Body2" Class="rz-color-base-500 rz-mb-2">@user.Identity.Name</RadzenText>
+                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@role" Class="rz-mb-4" />
+                </RadzenCard>
+
+                <RadzenCard>
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                        @if (user.IsInRole("Admin"))
+                        {
+                            <RadzenIcon Icon="security" Style="color: var(--rz-primary)" />
+                            <RadzenStack Gap="0">
+                                <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-mb-0">Rol de Administrador</RadzenText>
+                                <RadzenText TextStyle="TextStyle.Caption" Class="rz-mb-0">Tienes permisos para gestionar todo el sistema.</RadzenText>
+                            </RadzenStack>
+                        }
+                        else
+                        {
+                            <RadzenIcon Icon="person" Style="color: var(--rz-secondary)" />
+                            <RadzenStack Gap="0">
+                                <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-mb-0">Rol de Usuario</RadzenText>
+                                <RadzenText TextStyle="TextStyle.Caption" Class="rz-mb-0">Puedes ver y editar tu información personal.</RadzenText>
+                            </RadzenStack>
+                        }
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+
+            <RadzenColumn Size="12" SizeMD="8">
+                <RadzenCard>
+                    <RadzenText TextStyle="TextStyle.H5" Class="rz-mb-4">Datos Personales</RadzenText>
+
+                    @if (dbUser is not null)
+                    {
+                        if (!string.IsNullOrEmpty(statusMessage))
+                        {
+                            <RadzenAlert AlertStyle="@(statusMessageClass == "alert-success" ? AlertStyle.Success : AlertStyle.Danger)" Variant="Variant.Flat" Shade="Shade.Lighter" AllowClose="true" Class="rz-mb-4">
+                                @statusMessage
+                            </RadzenAlert>
+                        }
+
+                        <RadzenTemplateForm Data="@editModel" Submit="@((ProfileEditModel args) => HandleUpdateProfile())">
+                            <RadzenRow Gap="1rem" Class="rz-mb-2">
+                                <RadzenColumn Size="12" SizeMD="6">
+                                    <RadzenFormField Text="Nombre" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenTextBox @bind-Value="editModel.Nombre" Name="Nombre" Style="width: 100%;" />
+                                    </RadzenFormField>
+                                    <RadzenRequiredValidator Component="Nombre" Text="El nombre es requerido" Popup="true" />
+                                    <RadzenLengthValidator Component="Nombre" Max="50" Text="Máximo 50 caracteres" Popup="true" />
+                                </RadzenColumn>
+                                <RadzenColumn Size="12" SizeMD="6">
+                                    <RadzenFormField Text="Apellido" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenTextBox @bind-Value="editModel.Apellido" Name="Apellido" Style="width: 100%;" />
+                                    </RadzenFormField>
+                                    <RadzenRequiredValidator Component="Apellido" Text="El apellido es requerido" Popup="true" />
+                                    <RadzenLengthValidator Component="Apellido" Max="50" Text="Máximo 50 caracteres" Popup="true" />
+                                </RadzenColumn>
+                            </RadzenRow>
+
+                            <RadzenFormField Text="Email" Variant="Variant.Outlined" Style="width: 100%;" Class="rz-mb-2">
+                                <RadzenTextBox Value="@user.Identity.Name" Disabled="true" Style="width: 100%;" />
+                            </RadzenFormField>
+
+                            <RadzenFormField Text="Teléfono" Variant="Variant.Outlined" Style="width: 100%;" Class="rz-mb-2">
+                                <RadzenTextBox @bind-Value="editModel.Telefono" Name="Telefono" Style="width: 100%;" />
+                            </RadzenFormField>
+
+                            <RadzenFormField Text="Dirección" Variant="Variant.Outlined" Style="width: 100%;" Class="rz-mb-4">
+                                <RadzenTextArea @bind-Value="editModel.Direccion" Name="Direccion" Style="width: 100%;" Rows="3" />
+                            </RadzenFormField>
+
+                            <RadzenButton ButtonType="ButtonType.Submit" Text="Guardar Cambios" Icon="save" ButtonStyle="ButtonStyle.Primary" />
+                        </RadzenTemplateForm>
+                    }
+                    else
+                    {
+                        <RadzenStack AlignItems="AlignItems.Center" Class="rz-py-4">
+                            <RadzenProgressBarCircular ShowValue="true" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Medium" />
+                        </RadzenStack>
+                    }
+                </RadzenCard>
+            </RadzenColumn>
+        </RadzenRow>
+    }
+    else
+    {
+        <RadzenStack AlignItems="AlignItems.Center" Class="rz-py-8">
+            <RadzenText TextStyle="TextStyle.H6">No has iniciado sesión.</RadzenText>
+            <RadzenLink Path="/login" Text="Ir a Iniciar Sesión" Icon="login" />
+        </RadzenStack>
+    }
+</div>
 
 @code {
     private ClaimsPrincipal? user;
     private string? role;
     private User? dbUser;
+    private ProfileEditModel editModel = new();
+    private string? statusMessage;
+    private string? statusMessageClass;
+
+    public class ProfileEditModel
+    {
+        [Required(ErrorMessage = "El nombre es requerido.")]
+        [StringLength(50, ErrorMessage = "El nombre no puede exceder los 50 caracteres.")]
+        public string Nombre { get; set; } = "";
+
+        [Required(ErrorMessage = "El apellido es requerido.")]
+        [StringLength(50, ErrorMessage = "El apellido no puede exceder los 50 caracteres.")]
+        public string Apellido { get; set; } = "";
+
+        [Phone(ErrorMessage = "Formato de teléfono no válido.")]
+        public string Telefono { get; set; } = "";
+
+        public string Direccion { get; set; } = "";
+    }
 
     protected override async Task OnInitializedAsync()
     {
         var state = await AuthProvider.GetAuthenticationStateAsync();
         user = state.User;
 
-        if (user.Identity is not null && user.Identity.IsAuthenticated)
+        if (user.Identity is not null && user.Identity.IsAuthenticated && user.Identity.Name is not null)
         {
-            role = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+            role = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ?? "Usuario";
             var email = user.Identity.Name;
             dbUser = userService.GetByEmail(email);
+
+            if (dbUser is not null)
+            {
+                editModel.Nombre = dbUser.Nombre;
+                editModel.Apellido = dbUser.Apellido;
+                // Asumiendo que estos campos podrían existir en el futuro en el modelo User.
+                // editModel.Telefono = dbUser.Telefono ?? "";
+                // editModel.Direccion = dbUser.Direccion ?? "";
+            }
+        }
+    }
+
+    private void HandleUpdateProfile()
+    {
+        if (dbUser is null || user?.Identity?.Name is null)
+        {
+            statusMessage = "Error: No se pudo encontrar el usuario.";
+            statusMessageClass = "alert-danger";
+            return;
+        }
+
+        var success = userService.UpdatePerfil(
+            user.Identity.Name,
+            editModel.Nombre,
+            editModel.Apellido,
+            editModel.Telefono,
+            editModel.Direccion
+        );
+
+        if (success)
+        {
+            statusMessage = "Perfil actualizado correctamente.";
+            statusMessageClass = "alert-success";
+            // Actualizar la UI con los nuevos datos
+            dbUser.Nombre = editModel.Nombre;
+            dbUser.Apellido = editModel.Apellido;
+        }
+        else
+        {
+            statusMessage = "Hubo un error al actualizar el perfil. Inténtelo de nuevo.";
+            statusMessageClass = "alert-danger";
         }
     }
 }
