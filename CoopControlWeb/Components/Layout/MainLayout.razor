@@ -16,9 +16,9 @@
 
                 <AuthorizeView>
                     <Authorized>
-                        <RadzenText TextStyle="TextStyle.Caption" Style="color: white; margin-bottom: 0;" Class="rz-display-none rz-display-md-block">
+                        <RadzenLink Icon="input" Path="perfil" Style="color: white; margin-bottom: 0;" Class="rz-display-none rz-display-md-block">
                             @context.User.Identity?.Name (@userRole)
-                        </RadzenText>
+                        </RadzenLink>
                         <RadzenButton Icon="logout" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Text"
                                       Click="@(() => NavigationManager.NavigateTo("/logout", true))" />
                     </Authorized>
@@ -108,6 +108,3 @@
         }
     }
 }
-
-
-
