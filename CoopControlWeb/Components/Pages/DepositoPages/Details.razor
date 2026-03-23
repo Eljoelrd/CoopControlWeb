@@ -1,0 +1,137 @@
+﻿@page "/depositos/details"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using CoopControlWeb.Modelos
+@inject IDbContextFactory<AppDBContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Detalle de Depósito</PageTitle>
+
+<div class="rz-p-0 rz-p-md-12">
+    <RadzenRow JustifyContent="JustifyContent.Center">
+        <RadzenColumn Size="12" SizeMD="10" SizeLG="8">
+            @if (deposito == null)
+            {
+                <RadzenCard Class="rz-shadow-10 rz-p-12 text-center">
+                    <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+                    <RadzenText TextStyle="TextStyle.Body1" Class="rz-mt-4">Cargando detalle...</RadzenText>
+                </RadzenCard>
+            }
+            else
+            {
+                <RadzenCard Class="rz-shadow-10 rz-border-radius-2 rz-p-0">
+                    <div style="background-color: var(--rz-info); height: 10px; width: 100%;"></div>
+
+                    <div class="rz-p-6 rz-p-md-10">
+                        <RadzenStack Gap="0.5rem" Class="rz-mb-6">
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                <RadzenIcon Icon="receipt_long" Style="color: var(--rz-info); font-size: 2rem;" />
+                                <RadzenText TextStyle="TextStyle.H4" TagName="TagName.H1" Class="rz-m-0">Detalle de Depósito</RadzenText>
+                            </RadzenStack>
+                            <RadzenText TextStyle="TextStyle.Body2" Class="rz-color-text-secondary">Visualice la información completa del depósito.</RadzenText>
+                        </RadzenStack>
+
+                        <RadzenStack Gap="1.5rem">
+                            <RadzenRow>
+                                <RadzenColumn Size="12" SizeMD="6">
+                                    <RadzenFormField Text="Socio" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenTextBox Value='@($"{deposito.Socio?.Nombre} {deposito.Socio?.Apellido}")' ReadOnly="true" />
+                                    </RadzenFormField>
+                                </RadzenColumn>
+                                <RadzenColumn Size="12" SizeMD="6">
+                                    <RadzenFormField Text="Fecha" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenTextBox Value='@deposito.FechaDeposito.ToString("dd/MM/yyyy")' ReadOnly="true" />
+                                    </RadzenFormField>
+                                </RadzenColumn>
+                            </RadzenRow>
+
+                            <RadzenRow>
+                                <RadzenColumn Size="12" SizeMD="6">
+                                    <RadzenFormField Text="Tipo" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenTextBox Value='@deposito.TipoDeposito' ReadOnly="true" />
+                                    </RadzenFormField>
+                                </RadzenColumn>
+                                <RadzenColumn Size="12" SizeMD="6">
+                                    <RadzenFormField Text="Método" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenTextBox Value='@deposito.MetodoPago' ReadOnly="true" />
+                                    </RadzenFormField>
+                                </RadzenColumn>
+                            </RadzenRow>
+
+                            <RadzenRow>
+                                <RadzenColumn Size="12" SizeMD="6">
+                                    <RadzenFormField Text="Monto" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenTextBox Value='@string.Format("{0:C}", deposito.Monto)' ReadOnly="true" />
+                                    </RadzenFormField>
+                                </RadzenColumn>
+                                <RadzenColumn Size="12" SizeMD="6">
+                                    <RadzenFormField Text="Referencia" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenTextBox Value='@deposito.ReferenciaExterna' ReadOnly="true" />
+                                    </RadzenFormField>
+                                </RadzenColumn>
+                            </RadzenRow>
+
+                            <RadzenRow>
+                                <RadzenColumn Size="12">
+                                    <RadzenFormField Text="Observaciones" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenTextArea Value='@deposito.Observaciones' ReadOnly="true" Rows="3" />
+                                    </RadzenFormField>
+                                </RadzenColumn>
+                            </RadzenRow>
+
+                            @if (deposito.Aporte != null)
+                            {
+                                <div class="rz-mt-2">
+                                    <RadzenText TextStyle="TextStyle.Subtitle2">Aporte relacionado:</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Body2">@deposito.Aporte.Concepto - @deposito.Aporte.Fecha.ToString("dd/MM/yyyy")</RadzenText>
+                                </div>
+                            }
+
+                            @if (deposito.Prestamo != null)
+                            {
+                                <div class="rz-mt-2">
+                                    <RadzenText TextStyle="TextStyle.Subtitle2">Préstamo relacionado:</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Body2">#@deposito.Prestamo.Id - RD$ @deposito.Prestamo.Monto:N0</RadzenText>
+                                </div>
+                            }
+
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Class="rz-mt-6">
+                                <RadzenButton Text="Regresar" Icon="arrow_back" ButtonStyle="ButtonStyle.Light" Variant="Variant.Text"
+                                              Click="@(() => NavigationManager.NavigateTo("/depositos"))" />
+                                <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                                    <RadzenButton Text="Editar" Icon="edit" ButtonStyle="ButtonStyle.Warning"
+                                                  Click="@(() => NavigationManager.NavigateTo($"/depositos/edit?id={deposito.Id}"))" Style="color: black;" />
+                                    <RadzenButton Text="Eliminar" Icon="delete" ButtonStyle="ButtonStyle.Danger"
+                                                  Click="@(() => NavigationManager.NavigateTo($"/depositos/delete?id={deposito.Id}"))" />
+                                </RadzenStack>
+                            </RadzenStack>
+                        </RadzenStack>
+                    </div>
+                </RadzenCard>
+            }
+        </RadzenColumn>
+    </RadzenRow>
+</div>
+
+@code {
+    private Deposito? deposito;
+
+    [SupplyParameterFromQuery]
+    private int Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+
+        deposito = await context.Depositos
+            .Include(d => d.Socio)
+            .Include(d => d.Aporte)
+            .Include(d => d.Prestamo)
+            .FirstOrDefaultAsync(d => d.Id == Id);
+
+        if (deposito == null)
+        {
+            NavigationManager.NavigateTo("/depositos");
+        }
+    }
+}

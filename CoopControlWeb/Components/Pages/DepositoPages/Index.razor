@@ -1,0 +1,170 @@
+﻿@page "/depositos"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using CoopControlWeb.Modelos
+@inject IDbContextFactory<AppDBContext> DbFactory
+@inject NavigationManager NavManager
+
+<PageTitle>CoopControl - Gestión de Depósitos</PageTitle>
+
+<div class="container-fluid mt-4">
+    <RadzenStack Gap="1.5rem">
+        
+        @* Encabezado *@
+        <RadzenRow AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Class="rz-mb-2">
+            <RadzenColumn Size="12" SizeMD="6">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
+                    <RadzenIcon Icon="savings" Size="36px" Style="color: var(--rz-info)" />
+                    <div>
+                        <RadzenText TextStyle="TextStyle.H4" TagName="TagName.H1" Class="rz-m-0">Gestión de Depósitos</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Caption">Registro de depósitos de socios</RadzenText>
+                    </div>
+                </RadzenStack>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="6" Class="rz-text-align-right">
+                <RadzenButton Text="Nuevo Depósito" Icon="add_card" ButtonStyle="ButtonStyle.Info" 
+                              Size="ButtonSize.Large" Click="@(() => NavManager.NavigateTo("/depositos/create"))" />
+            </RadzenColumn>
+        </RadzenRow>
+
+        @* KPIs *@
+        <RadzenRow Gap="1rem">
+            <RadzenColumn Size="12" SizeMD="3">
+                <RadzenCard Variant="Variant.Flat" Class="rz-background-color-info-lighter rz-p-4">
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenIcon Icon="account_balance_wallet" Style="color: var(--rz-info)" />
+                        <RadzenStack Gap="0">
+                            <RadzenText TextStyle="TextStyle.Overline">Total Depositado</RadzenText>
+                            <RadzenText TextStyle="TextStyle.H5"><b>RD$ @allDepositos.Sum(d => d.Monto).ToString("N2")</b></RadzenText>
+                        </RadzenStack>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="3">
+                <RadzenCard Variant="Variant.Flat" Class="rz-background-color-success-lighter rz-p-4">
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenIcon Icon="event" Style="color: var(--rz-success)" />
+                        <RadzenStack Gap="0">
+                            <RadzenText TextStyle="TextStyle.Overline">Depósitos este Mes</RadzenText>
+                            <RadzenText TextStyle="TextStyle.H5"><b>@allDepositos.Count(d => d.FechaDeposito.Month == DateTime.Today.Month)</b></RadzenText>
+                        </RadzenStack>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="3">
+                <RadzenCard Variant="Variant.Flat" Class="rz-background-color-warning-lighter rz-p-4">
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenIcon Icon="payments" Style="color: var(--rz-warning)" />
+                        <RadzenStack Gap="0">
+                            <RadzenText TextStyle="TextStyle.Overline">Para Aportes</RadzenText>
+                            <RadzenText TextStyle="TextStyle.H5"><b>@allDepositos.Count(d => d.TipoDeposito == "Aporte")</b></RadzenText>
+                        </RadzenStack>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="3">
+                <RadzenCard Variant="Variant.Flat" Class="rz-background-color-primary-lighter rz-p-4">
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenIcon Icon="credit_card" Style="color: var(--rz-primary)" />
+                        <RadzenStack Gap="0">
+                            <RadzenText TextStyle="TextStyle.Overline">Para Préstamos</RadzenText>
+                            <RadzenText TextStyle="TextStyle.H5"><b>@allDepositos.Count(d => d.TipoDeposito == "PagoPrestamo")</b></RadzenText>
+                        </RadzenStack>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+        </RadzenRow>
+
+        @* Grid *@
+        <RadzenCard Class="rz-shadow-4">
+            <RadzenDataGrid @ref="grid" Data="@allDepositos" TItem="Deposito" 
+                            AllowFiltering="true" FilterMode="FilterMode.Simple" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                            AllowPaging="true" PageSize="10" AllowSorting="true" 
+                            PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
+                            EmptyText="No se encontraron registros de depósitos.">
+                <Columns>
+                    @* Socio *@
+                    <RadzenDataGridColumn TItem="Deposito" Title="Socio" SortProperty="Socio.Nombre" FilterProperty="Socio.Nombre">
+                        <Template Context="d">
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                <RadzenAvatar Text="@($"{d.Socio?.Nombre?[0]}{d.Socio?.Apellido?[0]}")" Size="AvatarSize.ExtraSmall" />
+                                <RadzenText TextStyle="TextStyle.Body2"><b>@d.Socio?.Nombre @d.Socio?.Apellido</b></RadzenText>
+                            </RadzenStack>
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                    @* Fecha *@
+                    <RadzenDataGridColumn TItem="Deposito" Property="FechaDeposito" Title="Fecha" FormatString="{0:dd/MM/yyyy}" Width="120px" />
+                    
+                    @* Tipo *@
+                    <RadzenDataGridColumn TItem="Deposito" Property="TipoDeposito" Title="Tipo">
+                        <Template Context="d">
+                            @{
+                                var badgeStyle = d.TipoDeposito switch
+                                {
+                                    "Aporte" => BadgeStyle.Success,
+                                    "PagoPrestamo" => BadgeStyle.Info,
+                                    "AhorroLibre" => BadgeStyle.Secondary,
+                                    "Reembolso" => BadgeStyle.Warning,
+                                    _ => BadgeStyle.Secondary
+                                };
+                            }
+                            <RadzenBadge Text="@d.TipoDeposito" BadgeStyle="@badgeStyle" IsPill="true" />
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                    @* Método de Pago *@
+                    <RadzenDataGridColumn TItem="Deposito" Property="MetodoPago" Title="Método" Width="130px" />
+
+                    @* Monto *@
+                    <RadzenDataGridColumn TItem="Deposito" Property="Monto" Title="Monto">
+                        <Template Context="d">
+                            <span class="rz-color-info" style="font-weight: bold;">RD$ @d.Monto.ToString("N2")</span>
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                    @* Referencia *@
+                    <RadzenDataGridColumn TItem="Deposito" Property="ReferenciaExterna" Title="Referencia" Width="120px">
+                        <Template Context="d">
+                            <RadzenText TextStyle="TextStyle.Caption">@(string.IsNullOrEmpty(d.ReferenciaExterna) ? "-" : d.ReferenciaExterna)</RadzenText>
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                    @* Acciones *@
+                    <RadzenDataGridColumn TItem="Deposito" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="140px">
+                        <Template Context="d">
+                            <RadzenButton Icon="visibility" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Medium" 
+                                          Click="@(() => NavManager.NavigateTo($"/depositos/details?id={d.Id}"))" />
+                            <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Warning" Variant="Variant.Flat" Size="ButtonSize.Medium" 
+                                          Click="@(() => NavManager.NavigateTo($"/depositos/edit?id={d.Id}"))" Class="rz-mx-1" />
+                            <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Flat" Size="ButtonSize.Medium" 
+                                          Click="@(() => NavManager.NavigateTo($"/depositos/delete?id={d.Id}"))" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </RadzenCard>
+
+    </RadzenStack>
+</div>
+
+@code {
+    RadzenDataGrid<Deposito> grid = default!;
+    private List<Deposito> allDepositos = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        using var context = DbFactory.CreateDbContext();
+        allDepositos = await context.Depositos
+            .Include(d => d.Socio)
+            .Include(d => d.Aporte)
+            .Include(d => d.Prestamo)
+            .OrderByDescending(d => d.FechaDeposito)
+            .ToListAsync();
+    }
+}

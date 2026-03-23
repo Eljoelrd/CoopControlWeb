@@ -39,32 +39,44 @@
                 <Authorized>
                     <RadzenPanelMenuItem Text="Inicio" Icon="home" Path="/" />
 
-                    @* Usamos la variable userRole que cargamos en OnParametersSet *@
+                    @* === MENÚ ADMINISTRADOR === *@
                     @if (userRole == "Admin")
                     {
-                        <!-- Menú Administrador -->
                         <RadzenPanelMenuItem Text="Gestión de Socios" Icon="people" Path="/socios" />
                         <RadzenPanelMenuItem Text="Gestión de Aportes" Icon="payments" Path="/aportes" />
                         <RadzenPanelMenuItem Text="Gestión de Préstamos" Icon="account_balance" Path="/prestamos" />
+
+                        @* ✅ NUEVO: Depósitos (Admin tiene acceso completo) *@
+                        <RadzenPanelMenuItem Text="Gestión de Depósitos" Icon="savings" Path="/depositos" />
+
                         <RadzenPanelMenuItem Text="Certificados" Icon="description" Path="/certificados" />
-                        <RadzenPanelMenuItem Text="Depósitos" Icon="savings" Path="/depositos" />
                         <RadzenPanelMenuItem Text="Retiros" Icon="payments" Path="/retiros" />
                         <RadzenPanelMenuItem Text="Reportes" Icon="assessment" Path="/reportes" />
                         <RadzenPanelMenuItem Text="Configuración" Icon="settings" Path="/configuracion" />
                     }
+
+                    @* === MENÚ CAJERO === *@
                     else if (userRole == "Cajero")
                     {
-                        <!-- Menú Cajero -->
                         <RadzenPanelMenuItem Text="Aportes" Icon="attach_money" Path="/aporte-cajero" />
-                        <RadzenPanelMenuItem Text="Préstamos" Icon="" Path="/prestamo-cajero" />
+                        <RadzenPanelMenuItem Text="Préstamos" Icon="account_balance_wallet" Path="/prestamo-cajero" />
+
+                        @* ✅ NUEVO: Depósitos (Cajero puede registrar depósitos) *@
+                        <RadzenPanelMenuItem Text="Depósitos" Icon="savings" Path="/depositos/cajero" />
+
                         <RadzenPanelMenuItem Text="Certificados" Icon="description" Path="/certificados" />
                         <RadzenPanelMenuItem Text="Configuración" Icon="settings" Path="/configuracion" />
                     }
+
+                    @* === MENÚ SOCIO === *@
                     else if (userRole == "Socio")
                     {
-                        <!-- Menú Socio (DefaultUser) -->
                         <RadzenPanelMenuItem Text="Mis Aportes" Icon="attach_money" Path="/mis-aportes" />
                         <RadzenPanelMenuItem Text="Mis Préstamos" Icon="credit_card" Path="/mis-prestamos" />
+
+                        @* ✅ NUEVO: Mis Depósitos (Socio ve solo sus depósitos) *@
+                        <RadzenPanelMenuItem Text="Mis Depósitos" Icon="savings" Path="/mis-depositos" />
+
                         <RadzenPanelMenuItem Text="Mis Certificados" Icon="description" Path="/mis-certificados" />
                         <RadzenPanelMenuItem Text="Configuración" Icon="settings" Path="/configuracion" />
                     }
@@ -91,7 +103,6 @@
     private bool sidebarExpanded = true;
     private string userRole = "";
 
-    // Este es el "motor" que hace que el menú cambie al loguearte
     protected override async Task OnParametersSetAsync()
     {
         var state = await AuthStateProvider.GetAuthenticationStateAsync();
@@ -99,7 +110,6 @@
 
         if (user.Identity?.IsAuthenticated == true)
         {
-            // Extraemos el rol directamente de los Claims para máxima velocidad
             userRole = user.FindFirst(c => c.Type == ClaimTypes.Role)?.Value ?? "";
         }
         else
