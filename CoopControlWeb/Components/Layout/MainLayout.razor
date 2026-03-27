@@ -44,15 +44,15 @@
                     {
                         <RadzenPanelMenuItem Text="Gestión de Socios" Icon="people" Path="/socios" />
                         <RadzenPanelMenuItem Text="Gestión de Aportes" Icon="payments" Path="/aportes" />
-                        <RadzenPanelMenuItem Text="Gestión de Préstamos" Icon="account_balance" Path="/prestamos" />
+                        <RadzenPanelMenuItem Text="Gestión de Préstamos" Icon="account_balance_wallet" Path="/prestamos" />
 
                         @* ✅ NUEVO: Depósitos (Admin tiene acceso completo) *@
                         <RadzenPanelMenuItem Text="Gestión de Depósitos" Icon="savings" Path="/depositos" />
 
-                        <RadzenPanelMenuItem Text="Certificados" Icon="description" Path="/certificados" />
-                        <RadzenPanelMenuItem Text="Retiros" Icon="payments" Path="/retiros" />
-                        <RadzenPanelMenuItem Text="Reportes" Icon="assessment" Path="/reportes" />
-                        <RadzenPanelMenuItem Text="Configuración" Icon="settings" Path="/configuracion" />
+                        <RadzenPanelMenuItem Text="Certificados" Icon="description" Path="#" />
+                        <RadzenPanelMenuItem Text="Retiros" Icon="payments" Path="#" />
+                        <RadzenPanelMenuItem Text="Reportes" Icon="assessment" Path="#" />
+                        <RadzenPanelMenuItem Text="Configuración" Icon="settings" Path="/configuraciones" />
                     }
 
                     @* === MENÚ CAJERO === *@
@@ -65,7 +65,7 @@
                         <RadzenPanelMenuItem Text="Depósitos" Icon="savings" Path="/depositos/cajero" />
 
                         <RadzenPanelMenuItem Text="Certificados" Icon="description" Path="/certificados" />
-                        <RadzenPanelMenuItem Text="Configuración" Icon="settings" Path="/configuracion" />
+                        <RadzenPanelMenuItem Text="Configuración" Icon="settings" Path="/configuraciones" />
                     }
 
                     @* === MENÚ SOCIO === *@
@@ -78,7 +78,7 @@
                         <RadzenPanelMenuItem Text="Mis Depósitos" Icon="savings" Path="/mis-depositos" />
 
                         <RadzenPanelMenuItem Text="Mis Certificados" Icon="description" Path="/mis-certificados" />
-                        <RadzenPanelMenuItem Text="Configuración" Icon="settings" Path="/configuracion" />
+                        <RadzenPanelMenuItem Text="Configuración" Icon="settings" Path="/configuraciones" />
                     }
                 </Authorized>
             </AuthorizeView>
