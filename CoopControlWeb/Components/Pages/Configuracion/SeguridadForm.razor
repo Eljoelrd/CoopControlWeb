@@ -1,0 +1,90 @@
+﻿@using System.ComponentModel.DataAnnotations
+@using CoopControlWeb.Modelos
+@using Microsoft.AspNetCore.Components.Authorization
+@using Proyecto_Final.Modelos
+@inject AuthenticationStateProvider AuthProvider
+@inject UserService userService
+@rendermode InteractiveServer
+
+<h5>Cambiar Contraseña</h5>
+<EditForm Model="passwordModel" OnValidSubmit="CambiarPassword" FormName="PasswordForm">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label>Contraseña actual</label>
+        <InputText @bind-Value="passwordModel.CurrentPassword" type="password" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label>Nueva contraseña</label>
+        <InputText @bind-Value="passwordModel.NewPassword" type="password" class="form-control" />
+    </div>
+
+    <div class="mb-3">
+        <label>Confirmar nueva contraseña</label>
+        <InputText @bind-Value="passwordModel.ConfirmPassword" type="password" class="form-control" />
+    </div>
+
+    <button class="btn btn-warning">Actualizar contraseña</button>
+</EditForm>
+
+@if (!string.IsNullOrEmpty(passwordMessage))
+{
+    <div class="@passwordMessageCss mt-2">@passwordMessage</div>
+}
+
+@code {
+    private PasswordModel passwordModel = new();
+    private string passwordMessage = "";
+    private string passwordMessageCss = "";
+
+    private async Task CambiarPassword()
+    {
+        if (passwordModel.NewPassword != passwordModel.ConfirmPassword)
+        {
+            passwordMessage = "Las contraseñas no coinciden ❌";
+            passwordMessageCss = "alert alert-danger";
+            return;
+        }
+
+        var state = await AuthProvider.GetAuthenticationStateAsync();
+        var currentUser = state.User;
+
+        if (currentUser.Identity is not null && currentUser.Identity.IsAuthenticated)
+        {
+            var email = currentUser.Identity.Name;
+            var dbUser = userService.GetByEmail(email);
+
+            if (dbUser != null && BCrypt.Net.BCrypt.Verify(passwordModel.CurrentPassword, dbUser.PasswordHash))
+            {
+                dbUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(passwordModel.NewPassword);
+                userService.UpdateUser(dbUser);
+
+                passwordMessage = "Contraseña actualizada correctamente ✅";
+                passwordMessageCss = "alert alert-success";
+                // Reiniciar formulario
+                passwordModel = new PasswordModel();
+            }
+            else
+            {
+                passwordMessage = "La contraseña actual no es correcta ❌";
+                passwordMessageCss = "alert alert-danger";
+            }
+        }
+    }
+
+    public class PasswordModel
+    {
+        [Required(ErrorMessage = "La contraseña actual es obligatoria")]
+        public string CurrentPassword { get; set; } = "";
+
+        [Required(ErrorMessage = "La nueva contraseña es obligatoria")]
+        [MinLength(6, ErrorMessage = "Debe tener al menos 6 caracteres")]
+        public string NewPassword { get; set; } = "";
+
+        [Required(ErrorMessage = "Debe confirmar la contraseña")]
+        [Compare(nameof(NewPassword), ErrorMessage = "Las contraseñas no coinciden")]
+        public string ConfirmPassword { get; set; } = "";
+    }
+}
