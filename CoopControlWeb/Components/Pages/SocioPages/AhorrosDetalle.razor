@@ -1,0 +1,272 @@
+@page "/socios/ahorros"
+@using CoopControlWeb.Modelos
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<AppDBContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Cuenta de Ahorros del Socio</PageTitle>
+
+<div class="rz-p-6">
+    <RadzenRow>
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenFormField Text="Socio" Variant="Variant.Outlined" Style="width: 100%;">
+                <RadzenDropDown @bind-Value="selectedSocioId"
+                                Data="@socios"
+                                TextProperty="NombreCompleto"
+                                ValueProperty="Id"
+                                AllowFiltering="true"
+                                Placeholder="Seleccione un socio..."
+                                Change="@(async (object value) => await OnSocioChanged((int?)value))" />
+            </RadzenFormField>
+        </RadzenColumn>
+    </RadzenRow>
+
+    @if (selectedSocioId == null)
+    {
+        <RadzenCard>
+            <RadzenText>Seleccione un socio para ver su cuenta de ahorros.</RadzenText>
+        </RadzenCard>
+    }
+    else
+    {
+        <RadzenCard Class="rz-mt-4">
+            <RadzenText TextStyle="TextStyle.H5">MI CUENTA DE AHORROS</RadzenText>
+            <div class="rz-mt-3">
+                <div>Saldo Total: <strong>@totalSaldo.ToString("C")</strong></div>
+                <div>Interés Acumulado (estimado anual): <strong>@totalInteres.ToString("C")</strong></div>
+                <div>Total Disponible: <strong>@totalDisponible.ToString("C")</strong></div>
+            </div>
+
+            <RadzenStack Gap="1rem" Class="rz-mt-4">
+                @foreach (var a in ahorros)
+                {
+                    <RadzenCard Style="border-left: 4px solid #1976d2;">
+                        <div class="rz-d-flex rz-justify-content-space-between">
+                            <div>
+                                <div style="font-weight:600">@a.Tipo</div>
+                                <div>Saldo: <strong>@a.Saldo.ToString("C")</strong></div>
+                                <div>Interés (estimado anual): <strong>@( (a.Saldo * a.TasaInteresAnual / 100m).ToString("C") )</strong></div>
+                                @if (a.FechaVencimiento.HasValue)
+                                {
+                                    <div>Vencimiento: @a.FechaVencimiento.Value.ToString("dd/MM/yyyy")</div>
+                                }
+                                else
+                                {
+                                    <div>Disponible: Inmediato</div>
+                                }
+
+                                @* Reglas por tipo *@
+                                <div class="rz-mt-2 rz-color-text-secondary">
+                                    @if (a.Tipo == TipoAhorro.Normal.ToString())
+                                    {
+                                        <div>Aporte obligatorio: 2% del salario (solo retiro al desvincularse; 90 días tras solicitud).</div>
+                                    }
+                                    else if (a.Tipo == TipoAhorro.Especial.ToString())
+                                    {
+                                        <div>Ahorro Especial: equivalente al 5% del salario. Interés: 6% anual. No retirar si existe préstamo especial.</div>
+                                    }
+                                    else if (a.Tipo == TipoAhorro.Navideno.ToString())
+                                    {
+                                        <div>Ahorro Navideño: entrega en diciembre. Interés: 7% anual.</div>
+                                    }
+                                    else if (a.Tipo == TipoAhorro.Escolar.ToString())
+                                    {
+                                        <div>Ahorro Escolar: entrega en julio. Interés: 5% anual.</div>
+                                    }
+                                    else if (a.Tipo == TipoAhorro.Infantil.ToString())
+                                    {
+                                        <div>Ahorro Infantil: disponible al cumplir 18 años del beneficiario. Interés: 5% anual.</div>
+                                    }
+                                    else if (a.Tipo == TipoAhorro.ClubViajes.ToString())
+                                    {
+                                        <div>Ahorro Club de Viajes: después de 6 cuotas ininterrumpidas el socio puede acceder a beneficios de financiamiento.</div>
+                                    }
+                                    else if (a.Tipo == TipoAhorro.InversionCapital.ToString())
+                                    {
+                                        <div>Inversión a plazo fijo (6m/1a/3a). Interés: variable (ej. 8% anual). Revisar detalle.</div>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="rz-d-flex rz-flex-column rz-align-items-end">
+                                <RadzenButton Text="Ver Detalle" Icon="visibility" Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Light" Click="@( async () => await ToggleDetalleAhorro(a.Id) )" />
+                                <RadzenButton Text="Solicitar Retiro" Icon="request_page" Size="ButtonSize.Small" Style="margin-top:0.5rem" Click="@( () => SolicitarRetiro(a.Id) )" />
+                            </div>
+                        </div>
+
+                        @if (expandedAhorroId == a.Id)
+                        {
+                            <div class="rz-mt-3">
+                                <RadzenText TextStyle="TextStyle.Body2">Historial de movimientos del socio (depósitos, aportes, pagos) - filtrado por socio.</RadzenText>
+
+                                <RadzenDataGrid Data="@movimientos" TItem="MovimientoView" Count="@movimientos.Count">
+                                    <Columns>
+                                        <RadzenDataGridColumn TItem="MovimientoView" Property="Fecha" Title="Fecha" />
+                                        <RadzenDataGridColumn TItem="MovimientoView" Property="Tipo" Title="Tipo" />
+                                        <RadzenDataGridColumn TItem="MovimientoView" Property="Descripcion" Title="Descripción" />
+                                        <RadzenDataGridColumn TItem="MovimientoView" Property="Monto" Title="Monto" />
+                                    </Columns>
+                                </RadzenDataGrid>
+                            </div>
+                        }
+                    </RadzenCard>
+                }
+            </RadzenStack>
+        </RadzenCard>
+    }
+</div>
+
+@code {
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "socioId")]
+    public int? SocioIdFromQuery { get; set; }
+
+    private int? selectedSocioId;
+    private List<SocioOption> socios = new();
+    private List<AhorroView> ahorros = new();
+
+    private decimal totalSaldo = 0m;
+    private decimal totalInteres = 0m;
+    private decimal totalDisponible = 0m;
+
+    private int? expandedAhorroId;
+    private List<MovimientoView> movimientos = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var ctx = DbFactory.CreateDbContext();
+
+        socios = await ctx.Socios
+            .OrderBy(s => s.Nombre)
+            .ThenBy(s => s.Apellido)
+            .Select(s => new SocioOption
+            {
+                Id = s.Id,
+                NombreCompleto = s.Nombre + " " + s.Apellido + " - " + s.Cedula
+            })
+            .ToListAsync();
+
+        if (SocioIdFromQuery.HasValue)
+        {
+            selectedSocioId = SocioIdFromQuery.Value;
+            await LoadAhorros(selectedSocioId.Value);
+            await LoadMovimientos(selectedSocioId.Value);
+        }
+    }
+
+    private async Task OnSocioChanged(int? value)
+    {
+        selectedSocioId = value;
+        if (selectedSocioId.HasValue)
+        {
+            await LoadAhorros(selectedSocioId.Value);
+            await LoadMovimientos(selectedSocioId.Value);
+        }
+        else
+        {
+            ahorros.Clear();
+            movimientos.Clear();
+        }
+    }
+
+    private async Task LoadAhorros(int socioId)
+    {
+        using var ctx = DbFactory.CreateDbContext();
+
+        var entities = await ctx.Ahorros
+            .Where(a => a.SocioId == socioId)
+            .OrderBy(a => a.Tipo)
+            .ToListAsync();
+
+        var list = entities.Select(a => new AhorroView
+        {
+            Id = a.Id,
+            Tipo = a.Tipo.ToString(),
+            Saldo = a.Saldo,
+            TasaInteresAnual = a.TasaInteresAnual > 0 ? a.TasaInteresAnual : Ahorro.GetDefaultTasaInteres(a.Tipo),
+            FechaVencimiento = a.FechaVencimiento,
+            Notas = a.Notas
+        }).ToList();
+
+        ahorros = list;
+
+        totalSaldo = ahorros.Sum(x => x.Saldo);
+        totalInteres = ahorros.Sum(x => x.Saldo * x.TasaInteresAnual / 100m);
+        totalDisponible = totalSaldo + totalInteres;
+    }
+
+    private async Task LoadMovimientos(int socioId)
+    {
+        using var ctx = DbFactory.CreateDbContext();
+
+        var depositos = await ctx.Depositos
+            .Where(d => d.SocioId == socioId)
+            .OrderByDescending(d => d.FechaDeposito)
+            .Select(d => new MovimientoView
+            {
+                Fecha = d.FechaDeposito,
+                Tipo = d.TipoDeposito,
+                Descripcion = d.ReferenciaExterna ?? d.Observaciones ?? string.Empty,
+                Monto = d.Monto
+            })
+            .ToListAsync();
+
+        var aportes = await ctx.Aportes
+            .Where(a => a.SocioId == socioId)
+            .OrderByDescending(a => a.Fecha)
+            .Select(a => new MovimientoView
+            {
+                Fecha = a.Fecha,
+                Tipo = "Aporte",
+                Descripcion = a.Concepto ?? string.Empty,
+                Monto = a.Monto
+            })
+            .ToListAsync();
+
+        movimientos = depositos.Concat(aportes).OrderByDescending(m => m.Fecha).ToList();
+    }
+
+    private async Task ToggleDetalleAhorro(int ahorroId)
+    {
+        if (expandedAhorroId == ahorroId)
+        {
+            expandedAhorroId = null;
+        }
+        else
+        {
+            expandedAhorroId = ahorroId;
+            // Already loaded movimientos por socio; if want to filter by ahorro, additional linkage required
+        }
+    }
+
+    private void SolicitarRetiro(int ahorroId)
+    {
+        // Navegar a formulario de solicitud de retiro - implementar la ruta según su aplicación
+        NavigationManager.NavigateTo($"/retiros/solicitar?socioId={selectedSocioId}&ahorroId={ahorroId}");
+    }
+
+    // ----- Vistas internas -----
+    private class SocioOption
+    {
+        public int Id { get; set; }
+        public string NombreCompleto { get; set; } = string.Empty;
+    }
+
+    private class AhorroView
+    {
+        public int Id { get; set; }
+        public string Tipo { get; set; } = string.Empty;
+        public decimal Saldo { get; set; }
+        public decimal TasaInteresAnual { get; set; }
+        public DateTime? FechaVencimiento { get; set; }
+        public string? Notas { get; set; }
+    }
+
+    private class MovimientoView
+    {
+        public DateTime Fecha { get; set; }
+        public string Tipo { get; set; } = string.Empty;
+        public string Descripcion { get; set; } = string.Empty;
+        public decimal Monto { get; set; }
+    }
+}

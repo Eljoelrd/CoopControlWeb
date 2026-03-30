@@ -154,17 +154,42 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadData();
+        try
+        {
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            // Log para depuración; la excepción original contiene el nombre de columna inválido
+            Console.Error.WriteLine($"Error en OnInitializedAsync: {GetInnermostMessage(ex)}");
+            throw;
+        }
     }
 
     private async Task LoadData()
     {
-        using var context = DbFactory.CreateDbContext();
-        allDepositos = await context.Depositos
-            .Include(d => d.Socio)
-            .Include(d => d.Aporte)
-            .Include(d => d.Prestamo)
-            .OrderByDescending(d => d.FechaDeposito)
-            .ToListAsync();
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+            allDepositos = await context.Depositos
+                .AsNoTracking()
+                .Include(d => d.Socio)
+                .Include(d => d.Aporte)
+                .Include(d => d.Prestamo)
+                .OrderByDescending(d => d.FechaDeposito)
+                .ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            // Mostrar información útil para localizar la columna inválida en la base de datos
+            Console.Error.WriteLine($"Error cargando depósitos: {GetInnermostMessage(ex)}");
+            throw;
+        }
+    }
+
+    private static string GetInnermostMessage(Exception ex)
+    {
+        while (ex.InnerException != null) ex = ex.InnerException;
+        return ex.Message;
     }
 }

@@ -27,6 +27,11 @@ namespace CoopControlWeb.Modelos
         [ForeignKey("PrestamoId")]
         public Prestamo? Prestamo { get; set; }
 
+        // Nuevo: tipo de ahorro asociado cuando TipoDeposito == "AhorroLibre"
+        [NotMapped]
+        [StringLength(50)]
+        public string? AhorroTipo { get; set; }
+
         // === DATOS DEL DEPÓSITO ===
         [Required(ErrorMessage = "Debe indicar la fecha del depósito.")]
         [DataType(DataType.Date)]
@@ -40,7 +45,7 @@ namespace CoopControlWeb.Modelos
         [Required(ErrorMessage = "Debe seleccionar el tipo de depósito.")]
         [StringLength(50)]
         public string TipoDeposito { get; set; } = string.Empty;
-        // Valores: "Aporte", "PagoPrestamo", "AhorroLibre", "Reembolso"
+        // Valores: "Aporte", "PagoPrestamo", "AhorroLibre", "Reembolso", etc.
 
         [StringLength(50)]
         public string? MetodoPago { get; set; }

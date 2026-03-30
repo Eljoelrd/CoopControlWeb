@@ -20,6 +20,10 @@ namespace CoopControlWeb.Modelos
         // === NUEVA ENTIDAD: DEPOSITOS ===
         public DbSet<Deposito> Depositos { get; set; } = default!;
 
+        // Nuevo DbSet para Ahorros
+        public DbSet<Ahorro> Ahorros { get; set; } = default!;
+
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // === CONFIGURACIÓN DE USER ===
@@ -77,6 +81,15 @@ namespace CoopControlWeb.Modelos
                 entity.Property(d => d.UsuarioModificacion).HasMaxLength(100);
                 entity.Property(d => d.FechaCreacion).HasColumnType("datetime").HasDefaultValueSql("GETDATE()");
                 entity.Property(d => d.FechaModificacion).HasColumnType("datetime");
+            });
+
+            // Configuración básica para Ahorro
+            modelBuilder.Entity<Ahorro>(entity =>
+            {
+                entity.ToTable("Ahorros");
+                entity.HasKey(a => a.Id);
+                entity.Property(a => a.Saldo).HasColumnType("decimal(18,2)").IsRequired();
+                entity.Property(a => a.TasaInteresAnual).HasColumnType("decimal(5,2)");
             });
         }
     }

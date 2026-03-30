@@ -31,7 +31,7 @@
                 <RadzenDataGridColumn TItem="Socios" Property="Email" Title="Email" />
 
                 @* Columna de Acciones *@
-                <RadzenDataGridColumn TItem="Socios" Title="Acciones" Context="socio" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="160px">
+                <RadzenDataGridColumn TItem="Socios" Title="Acciones" Context="socio" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="220px">
                     <Template>
                         <RadzenButton Icon="info" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Small"
                                       Click="@(() => NavigationManager.NavigateTo($"/socios/details?id={socio.Id}"))" />
@@ -39,6 +39,8 @@
                                       Click="@(() => NavigationManager.NavigateTo($"/socios/edit?id={socio.Id}"))" />
                         <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Flat" Size="ButtonSize.Small" Class="rz-ml-1"
                                       Click="@(() => NavigationManager.NavigateTo($"/socios/delete?id={socio.Id}"))" />
+                        <RadzenButton Icon="account_balance_wallet" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Flat" Size="ButtonSize.Small" Class="rz-ml-1"
+                                      Click="@(() => NavigationManager.NavigateTo($"/socios/ahorros?socioId={socio.Id}"))" Text="Ver Ahorros" />
                     </Template>
                 </RadzenDataGridColumn>
             </Columns>

@@ -31,7 +31,7 @@
                             <RadzenRow>
                                 <RadzenColumn Size="12" SizeMD="8">
                                     <RadzenFormField Text="Socio" Variant="Variant.Outlined" Style="width: 100%;">
-                                        <RadzenDropDown Value="deposito.SocioId"
+                                        <RadzenDropDown @bind-Value="deposito.SocioId"
                                                         Data="@socios"
                                                         TextProperty="NombreCompleto"
                                                         ValueProperty="Id"
@@ -54,7 +54,7 @@
                                         <RadzenDropDown @bind-Value="deposito.TipoDeposito"
                                                         Data="@tiposDeposito"
                                                         Placeholder="Seleccione el tipo..."
-                                                        @onchange="OnTipoChanged" />
+                                                        Change="@( (object value) => OnTipoChanged() )" />
                                     </RadzenFormField>
                                 </RadzenColumn>
                                 <RadzenColumn Size="12" SizeMD="6">
@@ -65,6 +65,23 @@
                                     </RadzenFormField>
                                 </RadzenColumn>
                             </RadzenRow>
+
+                            @* Si es Ahorro: seleccionar subtipo de ahorro y crear/seleccionar ahorro destino *@
+                            @if (deposito.TipoDeposito == "AhorroLibre")
+                            {
+                                <RadzenRow>
+                                    <RadzenColumn Size="12">
+                                        <RadzenFormField Text="Tipo de Ahorro" Variant="Variant.Outlined" Style="width: 100%;">
+                                            <RadzenDropDown @bind-Value="selectedAhorroTipo"
+                                                            Data="@ahorroTipos"
+                                                            Placeholder="Seleccione el tipo de ahorro..." />
+                                        </RadzenFormField>
+                                        <RadzenText TextStyle="TextStyle.Caption" Class="rz-mt-1 rz-color-text-secondary">
+                                            Seleccione a qué tipo de ahorro se destina el depósito.
+                                        </RadzenText>
+                                    </RadzenColumn>
+                                </RadzenRow>
+                            }
 
                             @* Fila 3: Monto y Referencia *@
                             <RadzenRow>
@@ -89,14 +106,20 @@
                             {
                                 <RadzenRow>
                                     <RadzenColumn Size="12">
-                                        <RadzenFormField Text="Aporte Relacionado (Opcional)" Variant="Variant.Outlined" Style="width: 100%;">
-                                            <RadzenDropDown @bind-Value="deposito.AporteId"
-                                                            Data="@aportesDelSocio"
-                                                            TextProperty="ConceptoFecha"
-                                                            ValueProperty="Id"
-                                                            AllowFiltering="true"
-                                                            Placeholder="Seleccione un aporte..." />
+                                        <RadzenText TextStyle="TextStyle.Caption" Class="rz-mb-2 rz-color-text-secondary">
+                                            Seleccione el tipo de aporte y escriba el concepto que se registrará.
+                                        </RadzenText>
+
+                                        <RadzenFormField Text="Tipo de Aporte" Variant="Variant.Outlined" Style="width: 100%;">
+                                            <RadzenDropDown @bind-Value="selectedAporteTipo"
+                                                            Data="@tiposAporte"
+                                                            Placeholder="Seleccione tipo de aporte..." />
                                         </RadzenFormField>
+
+                                        <RadzenFormField Text="Concepto" Variant="Variant.Outlined" Style="width: 100%;" Class="rz-mt-3">
+                                            <RadzenTextBox @bind-Value="deposito.Observaciones" Placeholder="Escriba el concepto del aporte..." Style="width:100%" />
+                                        </RadzenFormField>
+
                                         <RadzenText TextStyle="TextStyle.Caption" Class="rz-mt-1 rz-color-text-secondary">
                                             <i>Deje vacío si es un depósito general para el socio.</i>
                                         </RadzenText>
@@ -180,6 +203,18 @@
     private List<string> tiposDeposito = new() { "Aporte", "PagoPrestamo", "AhorroLibre", "Reembolso" };
     private List<string> metodosPago = new() { "Efectivo", "Transferencia", "Cheque", "Tarjeta" };
 
+    // Ahorros
+    private List<string> ahorroTipos = Enum.GetNames(typeof(TipoAhorro)).ToList();
+    private string? selectedAhorroTipo
+    {
+        get => deposito.AhorroTipo;
+        set => deposito.AhorroTipo = value;
+    }
+
+    // Tipos de aporte para selección en UI
+    private List<string> tiposAporte = new() { "Ordinario", "Extraordinario" };
+    private string? selectedAporteTipo = "Ordinario";
+
     protected override async Task OnInitializedAsync()
     {
         using var context = DbFactory.CreateDbContext();
@@ -250,6 +285,23 @@
             })
             .ToListAsync();
 
+        // Cargar aportes del socio para el dropdown de Aporte (si aplica)
+        var aportes = await context.Aportes
+            .Where(a => a.SocioId == socioId)
+            .OrderByDescending(a => a.Fecha)
+            .Select(a => new AporteDisplay
+            {
+                Id = a.Id,
+                ConceptoFecha = $"{a.Concepto} - {a.Fecha:dd/MM/yyyy}",
+                Monto = a.Monto,
+                Tipo = a.Tipo
+            })
+            .ToListAsync();
+
+        // Asignar a las listas del componente
+        prestamosDelSocio = prestamos;
+        aportesDelSocio = aportes;
+
         // Resetear selecciones si cambió de socio
         if (deposito.SocioId != socioId)
         {
@@ -274,31 +326,79 @@
             return;
         }
 
-        using var context = DbFactory.CreateDbContext();
-
-        deposito.FechaCreacion = DateTime.Now;
-        deposito.EstaProcesado = true;
-        deposito.UsuarioRegistro = "admin";
-
-        context.Depositos.Add(deposito);
-
-        if (deposito.TipoDeposito == "PagoPrestamo" && deposito.PrestamoId.HasValue)
+        try
         {
-            var pago = new PagoPrestamo
-            {
-                PrestamoId = deposito.PrestamoId.Value,
-                FechaPago = deposito.FechaDeposito,
-                Monto = deposito.Monto,
-                Metodo = deposito.MetodoPago,
-                Observaciones = $"Pago desde depósito #{deposito.Id}",
-                UsuarioRegistro = deposito.UsuarioRegistro,
-                FechaCreacion = DateTime.Now
-            };
-            context.PagoPrestamo.Add(pago);
-        }
+            using var context = DbFactory.CreateDbContext();
 
-        await context.SaveChangesAsync();
-        NavigationManager.NavigateTo("/depositos");
+            deposito.FechaCreacion = DateTime.Now;
+            deposito.EstaProcesado = true;
+            deposito.UsuarioRegistro = "admin";
+
+            // Si es AhorroLibre, buscar o crear Ahorro del socio del tipo seleccionado
+            if (deposito.TipoDeposito == "AhorroLibre" && !string.IsNullOrWhiteSpace(selectedAhorroTipo) && deposito.SocioId > 0)
+            {
+                // Parsear enum
+                if (Enum.TryParse<TipoAhorro>(selectedAhorroTipo, out var tipoEnum))
+                {
+                    var ahorroExistente = await context.Ahorros.FirstOrDefaultAsync(a => a.SocioId == deposito.SocioId && a.Tipo == tipoEnum);
+                    if (ahorroExistente != null)
+                    {
+                        ahorroExistente.Saldo += deposito.Monto;
+                    }
+                    else
+                    {
+                        var nuevoAhorro = new Ahorro
+                        {
+                            SocioId = deposito.SocioId,
+                            Tipo = tipoEnum,
+                            Saldo = deposito.Monto,
+                            FechaCreacion = DateTime.Now
+                        };
+                        await context.Ahorros.AddAsync(nuevoAhorro);
+                    }
+                }
+            }
+
+            // Si es Aporte: crear aporte asociado
+            if (deposito.TipoDeposito == "Aporte")
+            {
+                var aporte = new Aporte
+                {
+                    SocioId = deposito.SocioId,
+                    Fecha = deposito.FechaDeposito,
+                    Monto = deposito.Monto,
+                    Tipo = selectedAporteTipo ?? "Ordinario",
+                    Concepto = deposito.Observaciones
+                };
+                await context.Aportes.AddAsync(aporte);
+                deposito.Aporte = aporte;
+            }
+
+            await context.Depositos.AddAsync(deposito);
+
+            if (deposito.TipoDeposito == "PagoPrestamo" && deposito.PrestamoId.HasValue)
+            {
+                var pago = new PagoPrestamo
+                {
+                    PrestamoId = deposito.PrestamoId.Value,
+                    FechaPago = deposito.FechaDeposito,
+                    Monto = deposito.Monto,
+                    Metodo = deposito.MetodoPago,
+                    Observaciones = $"Pago desde depósito #{deposito.Id}",
+                    UsuarioRegistro = deposito.UsuarioRegistro,
+                    FechaCreacion = DateTime.Now
+                };
+                await context.PagoPrestamo.AddAsync(pago);
+            }
+
+            await context.SaveChangesAsync();
+            NavigationManager.NavigateTo("/depositos");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error guardando depósito: {ex}");
+            throw;
+        }
     }
 
     // === Clases de visualización ===
@@ -313,6 +413,7 @@
         public int Id { get; set; }
         public string ConceptoFecha { get; set; } = string.Empty;
         public decimal Monto { get; set; }
+        public string? Tipo { get; set; }
     }
 
     public class PrestamoDisplay
