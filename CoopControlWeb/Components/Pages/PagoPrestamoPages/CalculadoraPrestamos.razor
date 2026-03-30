@@ -1,0 +1,58 @@
+﻿@page "/calculadora"
+
+<RadzenRow JustifyContent="JustifyContent.Center" Class="rz-p-6">
+    <RadzenColumn Size="12" SizeMD="6">
+        <RadzenCard Class="rz-shadow-10">
+            <RadzenText TextStyle="TextStyle.H5" Class="rz-mb-4">Calculadora de Cuotas</RadzenText>
+
+            <RadzenStack Gap="1rem">
+                <RadzenFormField Text="Monto del Préstamo (RD$)" Style="width: 100%;">
+                    <RadzenNumeric @bind-Value="monto" TValue="decimal" Change="@Calcular" />
+                </RadzenFormField>
+
+                <RadzenFormField Text="Tasa de Interés Anual (%)" Style="width: 100%;">
+                    <RadzenNumeric @bind-Value="tasaAnual" TValue="double" Change="@Calcular" />
+                </RadzenFormField>
+
+                <RadzenFormField Text="Plazo (Meses)" Style="width: 100%;">
+                    <RadzenNumeric @bind-Value="meses" TValue="int" Change="@Calcular" />
+                </RadzenFormField>
+
+                <RadzenAlert AlertStyle="AlertStyle.Info" Variant="Variant.Flat" Shade="Shade.Lighter" ShowIcon="false" Class="rz-mt-4">
+                    <RadzenRow>
+                        <RadzenColumn Size="6">
+                            <RadzenText TextStyle="TextStyle.Overline">Cuota Mensual</RadzenText>
+                            <RadzenText TextStyle="TextStyle.H4">RD$ @cuota.ToString("N2")</RadzenText>
+                        </RadzenColumn>
+                        <RadzenColumn Size="6">
+                            <RadzenText TextStyle="TextStyle.Overline">Total Intereses</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Subtitle1">RD$ @totalInteres.ToString("N2")</RadzenText>
+                        </RadzenColumn>
+                    </RadzenRow>
+                </RadzenAlert>
+            </RadzenStack>
+        </RadzenCard>
+    </RadzenColumn>
+</RadzenRow>
+
+@code {
+    private decimal monto = 10000;
+    private double tasaAnual = 12;
+    private int meses = 12;
+    private decimal cuota = 0;
+    private decimal totalInteres = 0;
+
+    protected override void OnInitialized() => Calcular();
+
+    private void Calcular()
+    {
+        if (monto <= 0 || tasaAnual <= 0 || meses <= 0) return;
+
+        double tasaMensual = (tasaAnual / 100) / 12;
+        double factor = Math.Pow(1 + tasaMensual, meses);
+        decimal resultadoCuota = monto * (decimal)((tasaMensual * factor) / (factor - 1));
+
+        cuota = resultadoCuota;
+        totalInteres = (cuota * meses) - monto;
+    }
+}

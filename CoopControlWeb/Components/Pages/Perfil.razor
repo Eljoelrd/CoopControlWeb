@@ -2,195 +2,148 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
 @using CoopControlWeb.Modelos
-@using System.ComponentModel.DataAnnotations
-@using Radzen
-@using Radzen.Blazor
 @inject AuthenticationStateProvider AuthProvider
 @inject UserService userService
-
 @rendermode InteractiveServer
 
-<PageTitle>Mi Perfil</PageTitle>
+<PageTitle>Mi Perfil - CoopControl Web</PageTitle>
 
-<div class="container mt-4">
-    <RadzenText TextStyle="TextStyle.H3" TagName="TagName.H3" Class="rz-mb-4">Mi Perfil</RadzenText>
+@if (user is not null && user.Identity is not null && user.Identity.IsAuthenticated)
+{
+    <RadzenRow Gap="1.5rem" AlignItems="AlignItems.Center" Class="rz-mb-6">
+        <RadzenColumn Size="12" SizeMD="8">
+            <RadzenText TextStyle="TextStyle.H4" TagName="TagName.H1" Class="rz-m-0">Mi Panel de Usuario</RadzenText>
+            <RadzenText TextStyle="TextStyle.Body2" Class="rz-color-text-secondary">Visualice sus datos personales y nivel de acceso al sistema.</RadzenText>
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="4" Class="rz-text-align-right">
+            @* BOTÓN CLAVE: Redirige a Configuraciones para editar *@
+            <RadzenButton Text="Editar Perfil y Seguridad" Icon="settings" ButtonStyle="ButtonStyle.Primary" 
+                          Click="@(() => Navigation.NavigateTo("/configuraciones"))" Size="ButtonSize.Large" 
+                          Style="border-radius: 20px;" Class="rz-shadow-2" />
+        </RadzenColumn>
+    </RadzenRow>
 
-    @if (user is not null && user.Identity is not null && user.Identity.IsAuthenticated)
-    {
-        <RadzenRow Gap="1rem">
-            <RadzenColumn Size="12" SizeMD="4">
-                <RadzenCard Class="rz-mb-4 rz-text-align-center">
-                    <RadzenImage Path="https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg" Style="width: 150px; height: 150px; border-radius: 50%;" Class="rz-mb-3" />
-                    @if (dbUser is not null)
-                    {
-                        <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-0">@dbUser.Nombre @dbUser.Apellido</RadzenText>
-                    }
-                    <RadzenText TextStyle="TextStyle.Body2" Class="rz-color-base-500 rz-mb-2">@user.Identity.Name</RadzenText>
-                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="@role" Class="rz-mb-4" />
+    <RadzenRow Gap="1.5rem">
+        @* --- COLUMNA IZQUIERDA: TARJETA DE RESUMEN --- *@
+        <RadzenColumn Size="12" SizeMD="4">
+            <RadzenCard Class="rz-shadow-3 rz-border-radius-2 text-center rz-p-8 rz-background-color-panel">
+                <RadzenStack AlignItems="AlignItems.Center" Gap="1rem">
+                    @* Avatar con iniciales grande *@
+                    <RadzenAvatar Text="@($"{dbUser?.Nombre?[0]}{dbUser?.Apellido?[0]}")" 
+                                  Style="width: 100px; height: 100px; font-size: 2.5rem; background-color: var(--rz-primary); color: white;" 
+                                  Class="rz-shadow-3" />
+                    
+                    <div>
+                        <RadzenText TextStyle="TextStyle.H5" Class="rz-m-0"><b>@dbUser?.Nombre @dbUser?.Apellido</b></RadzenText>
+                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-primary);">@role</RadzenText>
+                    </div>
+
+                    <div style="width: 100%;">
+                        <hr style="border-top: 1px solid var(--rz-border-color); margin: 10px 0;" />
+                    </div>
+                    
+                    <RadzenIcon Icon="mail" Style="color: var(--rz-primary)" />
+                    <RadzenText TextStyle="TextStyle.Body2">@dbUser?.Email</RadzenText>
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+
+        @* --- COLUMNA DERECHA: DATOS DE SOLO LECTURA --- *@
+        <RadzenColumn Size="12" SizeMD="8">
+            <RadzenStack Gap="1.5rem">
+                
+                @* Tarjeta 1: Información Personal (Vista) *@
+                <RadzenCard Class="rz-shadow-3 rz-border-radius-2">
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Class="rz-mb-4">
+                        <RadzenIcon Icon="badge" Style="color: var(--rz-primary)" />
+                        <RadzenText TextStyle="TextStyle.H6" Class="rz-m-0">Datos Personales Registrados</RadzenText>
+                    </RadzenStack>
+
+                    <RadzenRow Gap="1rem">
+                        <RadzenColumn Size="12" SizeMD="6">
+                            <RadzenText TextStyle="TextStyle.Overline" Class="rz-display-flex rz-mt-2 rz-my-0">Nombres</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1"><b>@dbUser?.Nombre</b></RadzenText>
+                            
+                            <RadzenText TextStyle="TextStyle.Overline" Class="rz-display-flex rz-mt-4 rz-my-0">Apellidos</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1"><b>@dbUser?.Apellido</b></RadzenText>
+                        </RadzenColumn>
+                        <RadzenColumn Size="12" SizeMD="6">
+                            <RadzenText TextStyle="TextStyle.Overline" Class="rz-display-flex rz-mt-2 rz-my-0">Correo Electrónico Principal</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">@user.Identity.Name</RadzenText>
+
+                            <RadzenText TextStyle="TextStyle.Overline" Class="rz-display-flex rz-mt-4 rz-my-0">ID del Usuario en Sistema</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">#@dbUser?.Id</RadzenText>
+                        </RadzenColumn>
+                    </RadzenRow>
                 </RadzenCard>
 
-                <RadzenCard>
-                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                        @if (user.IsInRole("Admin"))
-                        {
-                            <RadzenIcon Icon="security" Style="color: var(--rz-primary)" />
-                            <RadzenStack Gap="0">
-                                <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-mb-0">Rol de Administrador</RadzenText>
-                                <RadzenText TextStyle="TextStyle.Caption" Class="rz-mb-0">Tienes permisos para gestionar todo el sistema.</RadzenText>
-                            </RadzenStack>
-                        }
-                        else
-                        {
-                            <RadzenIcon Icon="person" Style="color: var(--rz-secondary)" />
-                            <RadzenStack Gap="0">
-                                <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-mb-0">Rol de Usuario</RadzenText>
-                                <RadzenText TextStyle="TextStyle.Caption" Class="rz-mb-0">Puedes ver y editar tu información personal.</RadzenText>
-                            </RadzenStack>
-                        }
+                @* Tarjeta 2: Nivel de Acceso (Vista) *@
+                <RadzenCard Class="rz-shadow-3 rz-border-radius-2 rz-background-color-primary-lighter">
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Class="rz-mb-4">
+                        <RadzenIcon Icon="lock" Style="color: var(--rz-primary)" />
+                        <RadzenText TextStyle="TextStyle.H6" Class="rz-m-0" Style="color: var(--rz-primary);">Nivel de Acceso Actual</RadzenText>
+                    </RadzenStack>
+
+                    <RadzenStack Gap="1rem" Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                        <RadzenBadge Text="@role" BadgeStyle="BadgeStyle.Primary" IsPill="true" Style="font-size: 1.1rem; padding: 0.6rem 1.2rem;" />
+                        
+                        <div class="rz-ms-4">
+                            @if (user.IsInRole("Admin"))
+                            {
+                                <RadzenText TextStyle="TextStyle.Body2"><b>Permisos Totales:</b> Usted es administrador. Tiene control completo sobre socios, aportes, préstamos, reportes y configuraciones globales.</RadzenText>
+                            }
+                            else if (user.IsInRole("Cajero"))
+                            {
+                                <RadzenText TextStyle="TextStyle.Body2"><b>Permisos Operativos:</b> Usted es cajero. Puede registrar y gestionar transacciones de aportes y desembolsos de préstamos.</RadzenText>
+                            }
+                            else
+                            {
+                                <RadzenText TextStyle="TextStyle.Body2"><b>Permisos de Consulta:</b> Usted es socio. Puede visualizar sus propios registros históricos de aportes, préstamos y certificados.</RadzenText>
+                            }
+                        </div>
                     </RadzenStack>
                 </RadzenCard>
-            </RadzenColumn>
 
-            <RadzenColumn Size="12" SizeMD="8">
-                <RadzenCard>
-                    <RadzenText TextStyle="TextStyle.H5" Class="rz-mb-4">Datos Personales</RadzenText>
-
-                    @if (dbUser is not null)
-                    {
-                        if (!string.IsNullOrEmpty(statusMessage))
-                        {
-                            <RadzenAlert AlertStyle="@(statusMessageClass == "alert-success" ? AlertStyle.Success : AlertStyle.Danger)" Variant="Variant.Flat" Shade="Shade.Lighter" AllowClose="true" Class="rz-mb-4">
-                                @statusMessage
-                            </RadzenAlert>
-                        }
-
-                        <RadzenTemplateForm Data="@editModel" Submit="@((ProfileEditModel args) => HandleUpdateProfile())">
-                            <RadzenRow Gap="1rem" Class="rz-mb-2">
-                                <RadzenColumn Size="12" SizeMD="6">
-                                    <RadzenFormField Text="Nombre" Variant="Variant.Outlined" Style="width: 100%;">
-                                        <RadzenTextBox @bind-Value="editModel.Nombre" Name="Nombre" Style="width: 100%;" />
-                                    </RadzenFormField>
-                                    <RadzenRequiredValidator Component="Nombre" Text="El nombre es requerido" Popup="true" />
-                                    <RadzenLengthValidator Component="Nombre" Max="50" Text="Máximo 50 caracteres" Popup="true" />
-                                </RadzenColumn>
-                                <RadzenColumn Size="12" SizeMD="6">
-                                    <RadzenFormField Text="Apellido" Variant="Variant.Outlined" Style="width: 100%;">
-                                        <RadzenTextBox @bind-Value="editModel.Apellido" Name="Apellido" Style="width: 100%;" />
-                                    </RadzenFormField>
-                                    <RadzenRequiredValidator Component="Apellido" Text="El apellido es requerido" Popup="true" />
-                                    <RadzenLengthValidator Component="Apellido" Max="50" Text="Máximo 50 caracteres" Popup="true" />
-                                </RadzenColumn>
-                            </RadzenRow>
-
-                            <RadzenFormField Text="Email" Variant="Variant.Outlined" Style="width: 100%;" Class="rz-mb-2">
-                                <RadzenTextBox Value="@user.Identity.Name" Disabled="true" Style="width: 100%;" />
-                            </RadzenFormField>
-
-                            <RadzenFormField Text="Teléfono" Variant="Variant.Outlined" Style="width: 100%;" Class="rz-mb-2">
-                                <RadzenTextBox @bind-Value="editModel.Telefono" Name="Telefono" Style="width: 100%;" />
-                            </RadzenFormField>
-
-                            <RadzenFormField Text="Dirección" Variant="Variant.Outlined" Style="width: 100%;" Class="rz-mb-4">
-                                <RadzenTextArea @bind-Value="editModel.Direccion" Name="Direccion" Style="width: 100%;" Rows="3" />
-                            </RadzenFormField>
-
-                            <RadzenButton ButtonType="ButtonType.Submit" Text="Guardar Cambios" Icon="save" ButtonStyle="ButtonStyle.Primary" />
-                        </RadzenTemplateForm>
-                    }
-                    else
-                    {
-                        <RadzenStack AlignItems="AlignItems.Center" Class="rz-py-4">
-                            <RadzenProgressBarCircular ShowValue="true" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Medium" />
-                        </RadzenStack>
-                    }
-                </RadzenCard>
-            </RadzenColumn>
-        </RadzenRow>
-    }
-    else
-    {
-        <RadzenStack AlignItems="AlignItems.Center" Class="rz-py-8">
-            <RadzenText TextStyle="TextStyle.H6">No has iniciado sesión.</RadzenText>
-            <RadzenLink Path="/login" Text="Ir a Iniciar Sesión" Icon="login" />
-        </RadzenStack>
-    }
-</div>
+            </RadzenStack>
+        </RadzenColumn>
+    </RadzenRow>
+}
+else
+{
+    @* Pantalla de No Autenticado (Sigue igual) *@
+    <RadzenCard Class="rz-shadow-10 text-center rz-p-12 rz-mt-12">
+        <RadzenIcon Icon="account_circle" Style="font-size: 5rem; color: var(--rz-text-disabled-color);" />
+        <RadzenText TextStyle="TextStyle.H5" Class="rz-mt-6">Acceso Restringido</RadzenText>
+        <RadzenText TextStyle="TextStyle.Body2" Class="rz-mb-6">Debe iniciar sesión para visualizar los detalles de su cuenta personal.</RadzenText>
+        <RadzenButton Text="Ir al Login" Icon="login" ButtonStyle="ButtonStyle.Primary" 
+                      Click="@(() => Navigation.NavigateTo("/login"))" Size="ButtonSize.Large" Style="border-radius: 20px;" />
+    </RadzenCard>
+}
 
 @code {
     private ClaimsPrincipal? user;
     private string? role;
     private User? dbUser;
-    private ProfileEditModel editModel = new();
-    private string? statusMessage;
-    private string? statusMessageClass;
 
-    public class ProfileEditModel
-    {
-        [Required(ErrorMessage = "El nombre es requerido.")]
-        [StringLength(50, ErrorMessage = "El nombre no puede exceder los 50 caracteres.")]
-        public string Nombre { get; set; } = "";
-
-        [Required(ErrorMessage = "El apellido es requerido.")]
-        [StringLength(50, ErrorMessage = "El apellido no puede exceder los 50 caracteres.")]
-        public string Apellido { get; set; } = "";
-
-        [Phone(ErrorMessage = "Formato de teléfono no válido.")]
-        public string Telefono { get; set; } = "";
-
-        public string Direccion { get; set; } = "";
-    }
+    [Inject] NavigationManager Navigation { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
         var state = await AuthProvider.GetAuthenticationStateAsync();
         user = state.User;
 
-        if (user.Identity is not null && user.Identity.IsAuthenticated && user.Identity.Name is not null)
+        if (user.Identity is not null && user.Identity.IsAuthenticated)
         {
-            role = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ?? "Usuario";
+            role = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ?? "Socio";
             var email = user.Identity.Name;
-            dbUser = userService.GetByEmail(email);
-
-            if (dbUser is not null)
-            {
-                editModel.Nombre = dbUser.Nombre;
-                editModel.Apellido = dbUser.Apellido;
-                // Asumiendo que estos campos podrían existir en el futuro en el modelo User.
-                // editModel.Telefono = dbUser.Telefono ?? "";
-                // editModel.Direccion = dbUser.Direccion ?? "";
+            
+            try {
+                // Obtenemos los datos extendidos del UserService
+                dbUser = userService.GetByEmail(email);
+            } catch {
+                // Fallback de seguridad si userService falla
+                dbUser = new User { Nombre = "Usuario", Apellido = "(Sin Datos)", Email = email };
             }
-        }
-    }
-
-    private void HandleUpdateProfile()
-    {
-        if (dbUser is null || user?.Identity?.Name is null)
-        {
-            statusMessage = "Error: No se pudo encontrar el usuario.";
-            statusMessageClass = "alert-danger";
-            return;
-        }
-
-        var success = userService.UpdatePerfil(
-            user.Identity.Name,
-            editModel.Nombre,
-            editModel.Apellido,
-            editModel.Telefono,
-            editModel.Direccion
-        );
-
-        if (success)
-        {
-            statusMessage = "Perfil actualizado correctamente.";
-            statusMessageClass = "alert-success";
-            // Actualizar la UI con los nuevos datos
-            dbUser.Nombre = editModel.Nombre;
-            dbUser.Apellido = editModel.Apellido;
-        }
-        else
-        {
-            statusMessage = "Hubo un error al actualizar el perfil. Inténtelo de nuevo.";
-            statusMessageClass = "alert-danger";
         }
     }
 }

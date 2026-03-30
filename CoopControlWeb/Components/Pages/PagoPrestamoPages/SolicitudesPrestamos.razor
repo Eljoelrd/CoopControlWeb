@@ -1,0 +1,60 @@
+﻿@page "/prestamos/solicitudes"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Admin, Cajero")]
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using CoopControlWeb.Modelos
+@inject IDbContextFactory<AppDBContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Solicitudes de Préstamos</PageTitle>
+
+<RadzenStack Gap="1rem" Class="rz-p-6">
+    <RadzenRow AlignItems="AlignItems.Center">
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenText TextStyle="TextStyle.H4" Class="rz-m-0">Bandeja de Solicitudes</RadzenText>
+            <RadzenText TextStyle="TextStyle.Caption">Evaluación y aprobación de nuevos créditos</RadzenText>
+        </RadzenColumn>
+    </RadzenRow>
+
+    <RadzenDataGrid Data="@solicitudes" TItem="Prestamo" AllowPaging="true" PageSize="10" AllowSorting="true" Responsive="true">
+        <Columns>
+            <RadzenDataGridColumn TItem="Prestamo" Property="Socio.Nombre" Title="Socio">
+                <Template Context="p">
+                    @p.Socio?.Nombre @p.Socio?.Apellido
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Prestamo" Property="Monto" Title="Monto">
+                <Template Context="p">
+                    <b>RD$ @p.Monto.ToString("N2")</b>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Prestamo" Property="FechaPrestamo" Title="Fecha Solicitud" FormatString="{0:dd/MM/yyyy}" />
+            <RadzenDataGridColumn TItem="Prestamo" Title="Estado" TextAlign="TextAlign.Center">
+                <Template Context="p">
+                    <RadzenBadge BadgeStyle="BadgeStyle.Primary" Text="@p.Estado" Variant="Variant.Flat" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Prestamo" Title="Acciones" TextAlign="TextAlign.Right">
+                <Template Context="p">
+                    <RadzenButton Icon="fact_check" ButtonStyle="ButtonStyle.Success" Tooltip="Evaluar / Aprobar"
+                                  Click="@(() => NavigationManager.NavigateTo($"/prestamos/edit?id={p.Id}"))" />
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+</RadzenStack>
+
+@code {
+    private List<Prestamo> solicitudes = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        solicitudes = await context.Prestamos
+            .Include(p => p.Socio)
+            .Where(p => p.Estado == "Pendiente")
+            .OrderByDescending(p => p.FechaPrestamo)
+            .ToListAsync();
+    }
+}

@@ -1,0 +1,182 @@
+﻿@page "/pagoprestamos/create"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore
+@using CoopControlWeb.Modelos
+@using Proyecto_Final.Modelos
+@inject IDbContextFactory<AppDBContext> DbFactory
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthProvider
+@attribute [Authorize(Roles = "Admin, Cajero")]
+
+<PageTitle>Registrar Pago de Préstamo - CoopControl Web</PageTitle>
+
+<div class="rz-p-0 rz-p-md-12">
+    <RadzenRow JustifyContent="JustifyContent.Center">
+        <RadzenColumn Size="12" SizeMD="10" SizeLG="8">
+
+            @if (prestamo == null)
+            {
+                <RadzenCard Class="rz-shadow-10 rz-p-12 text-center">
+                    <RadzenProgressBar Value="100" Mode="ProgressBarMode.Indeterminate" />
+                    <RadzenText TextStyle="TextStyle.Body1" Class="rz-mt-4">Cargando información del préstamo...</RadzenText>
+                </RadzenCard>
+            }
+            else
+            {
+                <RadzenTemplateForm TItem="PagoPrestamo" Data="@pago" Submit="@ProcesarPago">
+                    <RadzenCard Class="rz-shadow-10 rz-border-radius-2 rz-p-0">
+                        @* Barra superior de acento (Azul para operaciones financieras) *@
+                        <div style="background-color: var(--rz-info); height: 10px; width: 100%;"></div>
+
+                        <div class="rz-p-6 rz-p-md-10">
+                            @* Resumen del Préstamo (Solo Lectura) *@
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Class="rz-mb-6">
+                                <RadzenIcon Icon="payments" Size="36px" Style="color: var(--rz-info)" />
+                                <div>
+                                    <RadzenText TextStyle="TextStyle.H4" Class="rz-m-0">Recepción de Pago</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Subtitle2">Socio: <b>@prestamo.Socio?.Nombre @prestamo.Socio?.Apellido</b></RadzenText>
+                                </div>
+                            </RadzenStack>
+
+                            @* Panel de Balance Actual *@
+                            <RadzenAlert AlertStyle="AlertStyle.Info" Variant="Variant.Flat" Shade="Shade.Lighter" ShowIcon="false" Class="rz-mb-6">
+                                <RadzenRow>
+                                    <RadzenColumn Size="12" SizeMD="4">
+                                        <RadzenText TextStyle="TextStyle.Overline">Monto Original</RadzenText>
+                                        <RadzenText TextStyle="TextStyle.Subtitle1"><b>RD$ @prestamo.Monto.ToString("N2")</b></RadzenText>
+                                    </RadzenColumn>
+                                    <RadzenColumn Size="12" SizeMD="4">
+                                        <RadzenText TextStyle="TextStyle.Overline">Saldo Pendiente</RadzenText>
+                                        <RadzenText TextStyle="TextStyle.Subtitle1" Style="color: var(--rz-danger)"><b>RD$ @prestamo.SaldoPendiente.ToString("N2")</b></RadzenText>
+                                    </RadzenColumn>
+                                    <RadzenColumn Size="12" SizeMD="4">
+                                        <RadzenText TextStyle="TextStyle.Overline">Cuota Sugerida</RadzenText>
+                                        <RadzenText TextStyle="TextStyle.Subtitle1"><b>RD$ @(prestamo.CuotaMensual?.ToString("N2") ?? "0.00")</b></RadzenText>
+                                    </RadzenColumn>
+                                </RadzenRow>
+                            </RadzenAlert>
+
+                            <RadzenStack Gap="1.5rem">
+                                <RadzenRow>
+                                    <RadzenColumn Size="12" SizeMD="6">
+                                        <RadzenFormField Text="Monto a Pagar RD$" Variant="Variant.Outlined" Style="width: 100%;">
+                                            <RadzenNumeric @bind-Value="pago.Monto" Format="N2" TValue="decimal" Name="Monto" />
+                                        </RadzenFormField>
+                                        <RadzenRequiredValidator Component="Monto" Text="El monto es obligatorio" />
+                                    </RadzenColumn>
+                                    <RadzenColumn Size="12" SizeMD="6">
+                                        <RadzenFormField Text="Fecha de Pago" Variant="Variant.Outlined" Style="width: 100%;">
+                                            <RadzenDatePicker @bind-Value="pago.FechaPago" DateFormat="dd/MM/yyyy" Name="Fecha" />
+                                        </RadzenFormField>
+                                    </RadzenColumn>
+                                </RadzenRow>
+
+                                <RadzenRow>
+                                    <RadzenColumn Size="12" SizeMD="6">
+                                        <RadzenFormField Text="Método de Pago" Variant="Variant.Outlined" Style="width: 100%;">
+                                            <RadzenDropDown @bind-Value="pago.Metodo" Data="@(new[] { "Efectivo", "Transferencia", "Nómina", "Abono Extraordinario" })" Name="Metodo" />
+                                        </RadzenFormField>
+                                    </RadzenColumn>
+                                    <RadzenColumn Size="12" SizeMD="6" Class="rz-display-flex rz-align-items-center">
+                                        <RadzenCheckBox @bind-Value="pago.EsAbonoExtraordinario" Name="Abono" />
+                                        <RadzenLabel Text="¿Es Abono Extraordinario?" Component="Abono" Class="rz-ms-2" />
+                                    </RadzenColumn>
+                                </RadzenRow>
+
+                                <RadzenFormField Text="Observaciones / Comprobante" Variant="Variant.Outlined" Style="width: 100%;">
+                                    <RadzenTextArea @bind-Value="pago.Observaciones" Rows="2" Placeholder="Ej: Transferencia Banco Popular #12345" />
+                                </RadzenFormField>
+
+                                @if (!string.IsNullOrEmpty(errorMessage))
+                                {
+                                    <RadzenAlert AlertStyle="AlertStyle.Danger" ShowIcon="true" Variant="Variant.Flat">@errorMessage</RadzenAlert>
+                                }
+
+                                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Class="rz-mt-6">
+                                    <RadzenButton Text="Cancelar" Icon="cancel" ButtonStyle="ButtonStyle.Light" Variant="Variant.Text"
+                                                  Click="@(() => NavigationManager.NavigateTo("/prestamos"))" />
+                                    <RadzenButton ButtonType="ButtonType.Submit" Text="Confirmar y Aplicar Pago" Icon="check_circle"
+                                                  ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Large" />
+                                </RadzenStack>
+                            </RadzenStack>
+                        </div>
+                    </RadzenCard>
+                </RadzenTemplateForm>
+            }
+        </RadzenColumn>
+    </RadzenRow>
+</div>
+
+@code {
+    [SupplyParameterFromQuery] private int id { get; set; }
+    private Prestamo? prestamo;
+    private PagoPrestamo pago = new() { FechaPago = DateTime.Today, Monto = 0 };
+    private string errorMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        prestamo = await context.Prestamos
+            .Include(p => p.Socio)
+            .Include(p => p.PrestamoPagos) // Importante para calcular el SaldoPendiente real
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+        if (prestamo == null) NavigationManager.NavigateTo("/prestamos");
+        else
+        {
+            pago.PrestamoId = prestamo.Id;
+            // Sugerir el monto de la cuota por defecto
+            pago.Monto = prestamo.CuotaMensual ?? 0;
+        }
+    }
+
+    private async Task ProcesarPago()
+    {
+        if (pago.Monto <= 0)
+        {
+            errorMessage = "El monto debe ser mayor a cero.";
+            return;
+        }
+
+        if (prestamo != null && pago.Monto > prestamo.SaldoPendiente)
+        {
+            errorMessage = $"El pago (RD$ {pago.Monto:N2}) no puede exceder el saldo pendiente (RD$ {prestamo.SaldoPendiente:N2}).";
+            return;
+        }
+
+        using var context = DbFactory.CreateDbContext();
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+
+        pago.FechaCreacion = DateTime.Now;
+        pago.UsuarioRegistro = authState.User.Identity?.Name ?? "Sistema";
+
+        // 1. Guardar el registro del pago
+        context.PagoPrestamo.Add(pago);
+
+        // 2. Actualizar el préstamo (Lógica de la Cooperativa)
+        var prestamoDB = await context.Prestamos.FindAsync(id);
+        if (prestamoDB != null)
+        {
+            // Nota: El SaldoPendiente suele ser una propiedad calculada (NotMapped),
+            // pero si usas MontoPagado en la DB, lo actualizamos aquí:
+            // prestamoDB.MontoPagado += pago.Monto;
+
+            // Verificamos si con este pago se completa el total con intereses
+            // Usamos la lógica de tu archivo MisPrestamos.razor
+            var pagosPrevios = await context.PagoPrestamo.Where(p => p.PrestamoId == id).SumAsync(p => p.Monto);
+            if ((pagosPrevios + pago.Monto) >= prestamoDB.TotalConInteres)
+            {
+                prestamoDB.Estado = "Pagado";
+                prestamoDB.FechaDevolucion = DateTime.Now;
+            }
+
+            prestamoDB.FechaModificacion = DateTime.Now;
+            context.Prestamos.Update(prestamoDB);
+        }
+
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo("/prestamos");
+    }
+}

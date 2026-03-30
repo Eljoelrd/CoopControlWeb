@@ -1,0 +1,122 @@
+﻿@page "/prestamos/solicitar"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore
+@using CoopControlWeb.Modelos
+@using Proyecto_Final.Modelos
+@inject AuthenticationStateProvider AuthProvider
+@inject IDbContextFactory<AppDBContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Solicitar Préstamo - CoopControl Web</PageTitle>
+
+<div class="rz-p-0 rz-p-md-12">
+    <RadzenRow JustifyContent="JustifyContent.Center">
+        <RadzenColumn Size="12" SizeMD="10" SizeLG="8">
+            <RadzenTemplateForm TItem="Prestamo" Data="@solicitud" Submit="@EnviarSolicitud">
+                <RadzenCard Class="rz-shadow-10 rz-border-radius-2 rz-p-0">
+                    <div style="background-color: var(--rz-primary); height: 10px; width: 100%;"></div>
+
+                    <div class="rz-p-6 rz-p-md-10">
+                        <RadzenStack Gap="0.5rem" Class="rz-mb-6">
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                <RadzenIcon Icon="edit_calendar" Style="color: var(--rz-primary); font-size: 2rem;" />
+                                <RadzenText TextStyle="TextStyle.H4" TagName="TagName.H1" Class="rz-m-0">Nueva Solicitud de Préstamo</RadzenText>
+                            </RadzenStack>
+                            <RadzenText TextStyle="TextStyle.Body2" Class="rz-color-text-secondary">Complete los datos. La tasa de interés y cuota son valores de referencia iniciales.</RadzenText>
+                        </RadzenStack>
+
+                        <RadzenStack Gap="1.5rem">
+                            <RadzenFormField Text="Tipo de Préstamo" Variant="Variant.Outlined" Style="width: 100%;">
+                                <RadzenDropDown @bind-Value="solicitud.TipoPrestamo" Data="@(new[] { "Personal", "Comercial", "Vivienda" })" Placeholder="Seleccione..." Name="TipoPrestamo" />
+                            </RadzenFormField>
+                            <RadzenRequiredValidator Component="TipoPrestamo" Text="Seleccione el tipo" />
+
+                            <RadzenRow>
+                                <RadzenColumn Size="12" SizeMD="6">
+                                    <RadzenFormField Text="Monto RD$" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenNumeric @bind-Value="solicitud.Monto" Format="N2" Placeholder="0.00" Name="Monto" TValue="decimal" Change="@CalcularCuota" />
+                                    </RadzenFormField>
+                                    <RadzenRequiredValidator Component="Monto" Text="Monto requerido" />
+                                </RadzenColumn>
+                                <RadzenColumn Size="12" SizeMD="6">
+                                    <RadzenFormField Text="Plazo (Meses)" Variant="Variant.Outlined" Style="width: 100%;">
+                                        <RadzenNumeric @bind-Value="solicitud.PlazoMeses" Placeholder="0" Min="1" TValue="int?" Change="@CalcularCuota" />
+                                    </RadzenFormField>
+                                </RadzenColumn>
+                            </RadzenRow>
+
+                            @* Resultados del Cálculo en Tiempo Real *@
+                            <RadzenAlert Title="Simulación Preliminar" AlertStyle="AlertStyle.Info" Variant="Variant.Flat" Shade="Shade.Lighter" ShowIcon="true">
+                                <RadzenRow>
+                                    <RadzenColumn Size="6">
+                                        <RadzenText TextStyle="TextStyle.Subtitle2">Tasa Interés Referencia</RadzenText>
+                                        <RadzenText TextStyle="TextStyle.H6"><b>@solicitud.TasaInteres%</b></RadzenText>
+                                    </RadzenColumn>
+                                    <RadzenColumn Size="6">
+                                        <RadzenText TextStyle="TextStyle.Subtitle2">Cuota Mensual Estimada RD$</RadzenText>
+                                        <RadzenText TextStyle="TextStyle.H6"><b>@(solicitud.CuotaMensual?.ToString("N2") ?? "0.00")</b></RadzenText>
+                                    </RadzenColumn>
+                                </RadzenRow>
+                            </RadzenAlert>
+
+                            <RadzenFormField Text="Observaciones" Variant="Variant.Outlined" Style="width: 100%;">
+                                <RadzenTextArea @bind-Value="solicitud.Observaciones" Rows="2" Placeholder="Motivo de la solicitud (opcional)" />
+                            </RadzenFormField>
+
+                            @if (!string.IsNullOrEmpty(statusMessage))
+                            {
+                                <RadzenAlert AlertStyle="AlertStyle.Danger" ShowIcon="true">@statusMessage</RadzenAlert>
+                            }
+
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Class="rz-mt-6">
+                                <RadzenButton Text="Volver a Mis Préstamos" Icon="arrow_back" ButtonStyle="ButtonStyle.Light" Variant="Variant.Text" Click="@(() => NavigationManager.NavigateTo("/mis-prestamos"))" />
+                                <RadzenButton ButtonType="ButtonType.Submit" Text="Enviar Solicitud" Icon="send" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Large" Style="border-radius: 25px; padding: 0 2rem;" />
+                            </RadzenStack>
+                        </RadzenStack>
+                    </div>
+                </RadzenCard>
+            </RadzenTemplateForm>
+        </RadzenColumn>
+    </RadzenRow>
+</div>
+
+@code {
+    private Prestamo solicitud = new() { FechaPrestamo = DateTime.Today, Estado = "Pendiente", TasaInteres = 12.0m, Monto = 0 };
+    private int socioId;
+    private string statusMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthProvider.GetAuthenticationStateAsync();
+        var email = state.User.Identity?.Name;
+
+        if (!string.IsNullOrEmpty(email))
+        {
+            using var context = DbFactory.CreateDbContext();
+            var socio = await context.Socios.FirstOrDefaultAsync(s => s.Email == email);
+            if (socio != null) socioId = socio.Id;
+            else statusMessage = "Error crítico: El usuario logueado no está registrado como Socio de la cooperativa.";
+        }
+    }
+
+    private void CalcularCuota()
+    {
+        // Forzar el recálculo llamando a StateHasChanged o simplemente actualizando el modelo.
+        StateHasChanged();
+    }
+
+    private async Task EnviarSolicitud()
+    {
+        if (socioId == 0) return;
+
+        using var context = DbFactory.CreateDbContext();
+        solicitud.SocioId = socioId;
+        solicitud.FechaCreacion = DateTime.Now;
+        solicitud.Estado = "Pendiente";
+
+        context.Prestamos.Add(solicitud);
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo("/mis-prestamos");
+    }
+}

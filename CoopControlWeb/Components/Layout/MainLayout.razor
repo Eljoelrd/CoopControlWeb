@@ -5,19 +5,19 @@
 @inject NavigationManager NavigationManager
 @rendermode InteractiveServer
 
-<RadzenLayout>
+<RadzenLayout Style="grid-template-areas: 'rz-header rz-header' 'rz-sidebar rz-body' 'rz-footer rz-footer'; grid-template-columns: auto 1fr; grid-template-rows: auto 1fr auto; height: 100vh;">
     <RadzenHeader>
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0" Style="width: 100%;">
             <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
             <RadzenLabel Text="CoopControl Web" Class="ms-3" Style="font-weight: 600; font-size: 1.25rem; color: #f0fff4;" />
 
             <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Style="margin-left: auto; padding-right: 1rem;">
-                <RadzenAppearanceToggle Class="header-btn" />
-
+                <RadzenAppearanceToggle />
                 <AuthorizeView>
                     <Authorized>
-                        <RadzenLink Icon="input" Path="perfil" Style="color: white; margin-bottom: 0;" Class="rz-display-none rz-display-md-block">
-                            @context.User.Identity?.Name (@userRole)
+                        <RadzenLink Path="perfil" Style="color: white; text-decoration: none;" Class="rz-display-none rz-display-md-block">
+                            @context.User.Identity?.Name
+                            <RadzenBadge Text="@userRole" IsPill="true" BadgeStyle="BadgeStyle.Secondary" Class="rz-me-2" />
                         </RadzenLink>
                         <RadzenButton Icon="logout" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Text"
                                       Click="@(() => NavigationManager.NavigateTo("/logout", true))" />
@@ -29,72 +29,69 @@
 
     <RadzenSidebar Responsive="false" Style="width: max-content;">
         <RadzenPanelMenu DisplayStyle="@(sidebarExpanded? MenuItemDisplayStyle.IconAndText: MenuItemDisplayStyle.Icon)" ShowArrow="false">
+            <RadzenPanelMenuItem Text="Inicio" Icon="home" Path="/" />
+
             <AuthorizeView>
                 <NotAuthorized>
-                    <RadzenPanelMenuItem Text="Inicio" Icon="home" Path="/" />
                     <RadzenPanelMenuItem Text="Iniciar Sesión" Icon="login" Path="/login" />
                     <RadzenPanelMenuItem Text="Registrarse" Icon="person_add" Path="/register" />
                 </NotAuthorized>
+            </AuthorizeView>
 
+            <AuthorizeView Roles="Admin, Cajero">
                 <Authorized>
-                    <RadzenPanelMenuItem Text="Inicio" Icon="home" Path="/" />
-
-                    @* === MENÚ ADMINISTRADOR === *@
-                    @if (userRole == "Admin")
-                    {
-                        <RadzenPanelMenuItem Text="Gestión de Socios" Icon="people" Path="/socios" />
-                        <RadzenPanelMenuItem Text="Gestión de Aportes" Icon="payments" Path="/aportes" />
-                        <RadzenPanelMenuItem Text="Gestión de Préstamos" Icon="account_balance" Path="/prestamos" />
-
-                        @* ✅ NUEVO: Depósitos (Admin tiene acceso completo) *@
+                    @* --- SECCIÓN ADMINISTRATIVA --- *@
+                    <RadzenPanelMenuItem Text="Dashboard" Icon="dashboard" Path="/dashboard" />
+                    <RadzenPanelMenuItem Text="Gestión de Socios" Icon="people" Path="/socios" />
+                    <RadzenPanelMenuItem Text="Caja / Transacciones" Icon="receipt_long">
                         <RadzenPanelMenuItem Text="Gestión de Depósitos" Icon="savings" Path="/depositos" />
+                    </RadzenPanelMenuItem>
 
-                        <RadzenPanelMenuItem Text="Certificados" Icon="description" Path="/certificados" />
-                        <RadzenPanelMenuItem Text="Retiros" Icon="payments" Path="/retiros" />
-                        <RadzenPanelMenuItem Text="Reportes" Icon="assessment" Path="/reportes" />
-                        <RadzenPanelMenuItem Text="Configuración" Icon="settings" Path="/configuracion" />
-                    }
+                    <RadzenPanelMenuItem Text="Servicios de Ahorro" Icon="account_balance">
+                        <RadzenPanelMenuItem Text="Aportaciones" Icon="payments" Path="/aportes" />
+                        <RadzenPanelMenuItem Text="Ahorros Retirables" Icon="account_balance_wallet" Path="/ahorros" />
+                        <RadzenPanelMenuItem Text="Certificados (Plazo Fijo)" Icon="description" Path="/certificados" />
+                    </RadzenPanelMenuItem>
 
-                    @* === MENÚ CAJERO === *@
-                    else if (userRole == "Cajero")
-                    {
-                        <RadzenPanelMenuItem Text="Aportes" Icon="attach_money" Path="/aporte-cajero" />
-                        <RadzenPanelMenuItem Text="Préstamos" Icon="account_balance_wallet" Path="/prestamo-cajero" />
-
-                        @* ✅ NUEVO: Depósitos (Cajero puede registrar depósitos) *@
-                        <RadzenPanelMenuItem Text="Depósitos" Icon="savings" Path="/depositos/cajero" />
-
-                        <RadzenPanelMenuItem Text="Certificados" Icon="description" Path="/certificados" />
-                        <RadzenPanelMenuItem Text="Configuración" Icon="settings" Path="/configuracion" />
-                    }
-
-                    @* === MENÚ SOCIO === *@
-                    else if (userRole == "Socio")
-                    {
-                        <RadzenPanelMenuItem Text="Mis Aportes" Icon="attach_money" Path="/mis-aportes" />
-                        <RadzenPanelMenuItem Text="Mis Préstamos" Icon="credit_card" Path="/mis-prestamos" />
-
-                        @* ✅ NUEVO: Mis Depósitos (Socio ve solo sus depósitos) *@
-                        <RadzenPanelMenuItem Text="Mis Depósitos" Icon="savings" Path="/mis-depositos" />
-
-                        <RadzenPanelMenuItem Text="Mis Certificados" Icon="description" Path="/mis-certificados" />
-                        <RadzenPanelMenuItem Text="Configuración" Icon="settings" Path="/configuracion" />
-                    }
+                    <RadzenPanelMenuItem Text="Cartera de Créditos" Icon="credit_score">
+                        <RadzenPanelMenuItem Text="Préstamos" Icon="format_list_bulleted" Path="/prestamos" />
+                        <RadzenPanelMenuItem Text="Solicitudes Nuevas" Icon="add_task" Path="/prestamos/solicitudes" />
+                    </RadzenPanelMenuItem>
+                    <RadzenPanelMenuItem Text="Reportes" Icon="assessment" Path="#" />
+                    <RadzenPanelMenuItem Text="Configuración" Icon="settings" Path="/configuraciones" />
                 </Authorized>
             </AuthorizeView>
+
+            <AuthorizeView Roles="Socio">
+                <Authorized>
+                    @* --- SECCIÓN EXCLUSIVA SOCIO --- *@
+                    <RadzenPanelMenuItem Text="Mi Cooperativa" Icon="person" Expanded="true">
+                        <RadzenPanelMenuItem Text="Estado de Cuenta" Icon="analytics" Path="/mi-estado" />
+                        <RadzenPanelMenuItem Text="Mis Aportes" Icon="history" Path="/mis-aportes" />
+                        <RadzenPanelMenuItem Text="Mis Préstamos" Icon="assignment" Path="/mis-prestamos" />
+                    </RadzenPanelMenuItem>
+
+                    <RadzenPanelMenuItem Text="Solicitudes" Icon="edit_note">
+                        <RadzenPanelMenuItem Text="Solicitar Préstamo" Icon="add_moderator" Path="/prestamos/solicitar" />
+                        <RadzenPanelMenuItem Text="Simulador de Cuotas" Icon="calculate" Path="/calculadora" />
+                    </RadzenPanelMenuItem>
+                    <RadzenPanelMenuItem Text="Configuración" Icon="settings" Path="/configuraciones" />
+                </Authorized>
+            </AuthorizeView>
+            
         </RadzenPanelMenu>
     </RadzenSidebar>
 
     <RadzenBody>
-        <div class="rz-p-4">
+        <div class="rz-p-4 rz-p-md-8">
             @Body
         </div>
     </RadzenBody>
 
     <RadzenFooter>
-        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
-            <span>© 2026 CoopControl Web</span>
-            <RadzenText TextStyle="TextStyle.Caption">Versión 1.0.0 (Prototipo)</RadzenText>
+        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Class="rz-px-4">
+            <RadzenText TextStyle="TextStyle.Caption">© 2026 CoopControl Web </RadzenText>
+            <RadzenText TextStyle="TextStyle.Caption"><b>Estado:</b> Conectado como @userRole</RadzenText>
         </RadzenStack>
     </RadzenFooter>
 </RadzenLayout>
@@ -110,11 +107,7 @@
 
         if (user.Identity?.IsAuthenticated == true)
         {
-            userRole = user.FindFirst(c => c.Type == ClaimTypes.Role)?.Value ?? "";
-        }
-        else
-        {
-            userRole = "";
+            userRole = user.FindFirst(ClaimTypes.Role)?.Value ?? "Socio";
         }
     }
 }

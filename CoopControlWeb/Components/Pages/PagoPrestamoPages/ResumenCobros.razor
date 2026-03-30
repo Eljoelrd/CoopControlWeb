@@ -1,0 +1,70 @@
+﻿@page "/dashboard"
+@using CoopControlWeb.Modelos
+@using Microsoft.EntityFrameworkCore
+@using Proyecto_Final.Modelos
+@inject IDbContextFactory<AppDBContext> DbFactory
+
+<RadzenCard Class="rz-shadow-5">
+    <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-4">Estado de Cobros Hoy (@DateTime.Today.ToShortDateString())</RadzenText>
+
+    @if (cargando)
+    {
+        <RadzenProgressBar Value="100" Mode="ProgressBarMode.Indeterminate" />
+    }
+    else
+    {
+        <RadzenChart Style="height: 250px">
+            <RadzenDonutSeries Data="@datosCobros" CategoryProperty="Estado" ValueProperty="Monto" TItem="DataPoint"
+                               TotalLabel="Total Proyectado" CombinedItemsText="Otros">
+                <ChildContent>
+                    <RadzenSeriesDataLabels Visible="true" />
+                </ChildContent>
+                <TitleTemplate>
+                    <div class="rz-donut-content">
+                        <b>RD$ @((cobrado + pendiente).ToString("N0"))</b>
+                    </div>
+                </TitleTemplate>
+            </RadzenDonutSeries>
+        </RadzenChart>
+
+        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceAround" Class="rz-mt-4">
+            <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="@($"Cobrado: RD$ {cobrado:N0}")" />
+            <RadzenBadge BadgeStyle="BadgeStyle.Warning" Text="@($"Pendiente: RD$ {pendiente:N0}")" />
+        </RadzenStack>
+    }
+</RadzenCard>
+
+@code {
+    private bool cargando = true;
+    private decimal cobrado = 0;
+    private decimal pendiente = 0;
+    private List<DataPoint> datosCobros = new();
+
+    public class DataPoint { public string Estado { get; set; } = ""; public decimal Monto { get; set; } }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+
+        // 1. Lo que se ha cobrado hoy efectivamente
+        cobrado = await context.PagoPrestamo
+            .Where(p => p.FechaPago.Date == DateTime.Today)
+            .SumAsync(p => p.Monto);
+
+        // 2. Lo que falta por cobrar (Simplificación: Préstamos activos que no han pagado este mes)
+        // Nota: Esta lógica depende de tu tabla de Plan de Pagos, aquí usamos una estimación
+        var totalActivos = await context.Prestamos
+            .Where(p => p.Estado == "Activo")
+            .SumAsync(p => p.CuotaMensual ?? 0);
+
+        pendiente = Math.Max(0, totalActivos - cobrado);
+
+        datosCobros = new List<DataPoint>
+        {
+            new DataPoint { Estado = "Cobrado", Monto = cobrado },
+            new DataPoint { Estado = "Pendiente", Monto = pendiente }
+        };
+
+        cargando = false;
+    }
+}
