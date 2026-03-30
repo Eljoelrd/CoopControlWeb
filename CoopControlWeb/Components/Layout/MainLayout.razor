@@ -41,6 +41,7 @@
             <AuthorizeView Roles="Admin, Cajero">
                 <Authorized>
                     @* --- SECCIÓN ADMINISTRATIVA --- *@
+                    <RadzenPanelMenuItem Text="Dashboard" Icon="dashboard" Path="/dashboard" />
                     <RadzenPanelMenuItem Text="Gestión de Socios" Icon="people" Path="/socios" />
                     <RadzenPanelMenuItem Text="Caja / Transacciones" Icon="receipt_long">
                         <RadzenPanelMenuItem Text="Gestión de Depósitos" Icon="savings" Path="/depositos" />
