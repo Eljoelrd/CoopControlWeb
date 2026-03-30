@@ -1,0 +1,111 @@
+﻿@page "/mis-prestamos/certificado"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore
+@using CoopControlWeb.Modelos
+@inject AuthenticationStateProvider AuthProvider
+@inject IDbContextFactory<AppDBContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Certificado de Préstamo - CoopControl Web</PageTitle>
+
+<div class="rz-p-0 rz-p-md-12">
+    @if (prestamo == null)
+    {
+        <RadzenProgressBar Mode="ProgressBarMode.Indeterminate" />
+    }
+    else
+    {
+        <RadzenCard Class="rz-shadow-10 rz-border-radius-2 rz-p-0 rz-p-md-10">
+            <RadzenStack Gap="1.5rem">
+                <RadzenRow AlignItems="AlignItems.Center">
+                    <RadzenColumn Size="12" SizeMD="8">
+                        <RadzenText TextStyle="TextStyle.Caption" Class="rz-m-0">DOCUMENTO OFICIAL</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H4" Class="rz-m-0"><b>Certificado de Préstamo RD$ @prestamo.Monto.ToString("N2")</b></RadzenText>
+                        <RadzenText TextStyle="TextStyle.Caption">ID de Transacción: #@prestamo.Id</RadzenText>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="4" Class="rz-text-align-right">
+                        <RadzenBadge Text="@prestamo.Estado" BadgeStyle="BadgeStyle.Success" IsPill="true" Style="font-size: 1.1rem; padding: 0.5rem 1rem;" />
+                    </RadzenColumn>
+                </RadzenRow>
+
+                <hr style="border-top: 2px solid var(--rz-border-color);" />
+
+                <RadzenRowGapGap="1rem">
+                    <RadzenColumn Size="12" SizeMD="4">
+                        <RadzenText TextStyle="TextStyle.Overline">Socio de la Cooperativa</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H6"><b>@prestamo.Socio?.Nombre @prestamo.Socio?.Apellido</b></RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2">Cédula: @prestamo.Socio?.Cedula</RadzenText>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="4">
+                        <RadzenText TextStyle="TextStyle.Overline">Fecha de Emisión</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H6">@prestamo.FechaPrestamo.ToString("dd 'de' MMMM 'de' yyyy")</RadzenText>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="4">
+                        <RadzenText TextStyle="TextStyle.Overline">Tipo de Crédito</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H6"><b>@prestamo.TipoPrestamo</b></RadzenText>
+                    </RadzenColumn>
+                </RadzenRowGapGap>
+
+                <RadzenCard Class="rz-background-color-panel rz-mt-4">
+                    <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-4" Style="color: var(--rz-primary);">Términos y Condiciones Financieras</RadzenText>
+                    <RadzenRowGapGap="1rem">
+                        <RadzenColumn Size="6" SizeMD="3">
+                            <RadzenText TextStyle="TextStyle.Overline">Capital Prestado RD$</RadzenText>
+                            <RadzenText TextStyle="TextStyle.H5">@prestamo.Monto.ToString("N2")</RadzenText>
+                        </RadzenColumn>
+                        <RadzenColumn Size="6" SizeMD="3">
+                            <RadzenText TextStyle="TextStyle.Overline">Tasa Anual (%)</RadzenText>
+                            <RadzenText TextStyle="TextStyle.H5">@prestamo.TasaInteres%</RadzenText>
+                        </RadzenColumn>
+                        <RadzenColumn Size="6" SizeMD="3">
+                            <RadzenText TextStyle="TextStyle.Overline">Plazo (Meses)</RadzenText>
+                            <RadzenText TextStyle="TextStyle.H5">@prestamo.PlazoMeses</RadzenText>
+                        </RadzenColumn>
+                        <RadzenColumn Size="6" SizeMD="3">
+                            <RadzenText TextStyle="TextStyle.Overline">Cuota Mensual RD$</RadzenText>
+                            <RadzenText TextStyle="TextStyle.H5"><b>@(prestamo.CuotaMensual?.ToString("N2") ?? "0.00")</b></RadzenText>
+                        </RadzenColumn>
+                    </RadzenRowGapGap>
+                </RadzenCard>
+
+                <RadzenRow Class="rz-mt-6">
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenCard Variant="Variant.Flat" Class="rz-background-color-success-lighter rz-p-4 text-center">
+                            <RadzenText TextStyle="TextStyle.Overline">Total RD$ RD$ (Capital + Interés)</RadzenText>
+                            <RadzenText TextStyle="TextStyle.H4"><b>@(prestamo.TotalConInteres?.ToString("N2") ?? "0.00")</b></RadzenText>
+                        </RadzenCard>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenCard Variant="Variant.Flat" Class="rz-background-color-primary-lighter rz-p-4 text-center">
+                            <RadzenText TextStyle="TextStyle.Overline">Saldo Pendiente RD$ RD$ (Actualizado)</RadzenText>
+                            <RadzenText TextStyle="TextStyle.H4" Style="color: var(--rz-primary);"><b>@prestamo.SaldoPendiente.ToString("N2")</b></RadzenText>
+                        </RadzenCard>
+                    </RadzenColumn>
+                </RadzenRow>
+
+                <div class="rz-text-align-right rz-mt-8">
+                    <RadzenButton Text="Volver a Mis Préstamos" Icon="arrow_back" ButtonStyle="ButtonStyle.Light" Click="@(() => NavigationManager.NavigateTo("/mis-prestamos"))" />
+                    <RadzenButton Text="Imprimir Certificado (Pronto)" Icon="print" ButtonStyle="ButtonStyle.Secondary" Class="rz-ms-2" Disabled="true" />
+                </div>
+            </RadzenStack>
+        </RadzenCard>
+    }
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private Prestamo? prestamo;
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        // Incluimos los pagos para que SaldoPendiente se calcule correctamente
+        prestamo = await context.Prestamos
+            .Include(p => p.Socio)
+            .Include(p => p.PrestamoPagos)
+            .FirstOrDefaultAsync(m => m.Id == Id);
+
+        if (prestamo == null) NavigationManager.NavigateTo("/mis-prestamos");
+    }
+}

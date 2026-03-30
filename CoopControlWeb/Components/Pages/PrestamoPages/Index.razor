@@ -5,56 +5,57 @@
 @using CoopControlWeb.Modelos
 @inject IDbContextFactory<AppDBContext> DbFactory
 @inject NavigationManager NavigationManager
+@attribute [Authorize(Roles = "Admin, Cajero")]
 
-<PageTitle>Prototipo - Gestión de Préstamos</PageTitle>
+<PageTitle>Cartera de Préstamos - CoopControl Web</PageTitle>
 
-<div class="container-fluid mt-4">
+<div class="rz-p-0 rz-p-md-12">
     <RadzenStack Gap="1.5rem">
         
-        @* Encabezado Dinámico *@
+        @* Encabezado Dinámico (Azul Cooperativa) *@
         <RadzenRow AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Class="rz-mb-2">
             <RadzenColumn Size="12" SizeMD="6">
                 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
-                    <RadzenIcon Icon="account_balance_wallet" Size="36px" Style="color: var(--rz-primary)" />
+                    <RadzenIcon Icon="monetization_on" Size="36px" Style="color: var(--rz-primary)" />
                     <div>
-                        <RadzenText TextStyle="TextStyle.H4" TagName="TagName.H1" Class="rz-m-0">Cartera de Préstamos</RadzenText>
-                        <RadzenText TextStyle="TextStyle.Caption">Prototipo v1.0 - Control de créditos y vencimientos</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H4" TagName="TagName.H1" Class="rz-m-0">Gestión de Préstamos</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Caption">V 1.1 - Control de créditos, solicitudes y pagos</RadzenText>
                     </div>
                 </RadzenStack>
             </RadzenColumn>
             <RadzenColumn Size="12" SizeMD="6" Class="rz-text-align-right">
-                <RadzenButton Text="Nuevo Préstamo" Icon="add_card" ButtonStyle="ButtonStyle.Primary" 
+                <RadzenButton Text="Crear Nuevo Préstamo" Icon="add_card" ButtonStyle="ButtonStyle.Primary" 
                               Size="ButtonSize.Large" Click="@(() => NavigationManager.NavigateTo("/prestamos/create"))" />
             </RadzenColumn>
         </RadzenRow>
 
         @* Tarjetas de Resumen Rápido *@
         <RadzenRow Gap="1rem">
-            <RadzenColumn Size="12" SizeMD="4">
+            <RadzenColumn Size="12" SizeMD="6">
                 <RadzenCard Variant="Variant.Flat" Class="rz-background-color-primary-lighter rz-p-4">
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
-                        <RadzenIcon Icon="monetization_on" Style="color: var(--rz-primary)" />
+                        <RadzenIcon Icon="money_off" Style="color: var(--rz-primary)" />
                         <RadzenStack Gap="0">
-                            <RadzenText TextStyle="TextStyle.Overline">Capital en Préstamos</RadzenText>
-                            <RadzenText TextStyle="TextStyle.H5"><b>RD$ @allPrestamos.Sum(p => p.Monto).ToString("N2")</b></RadzenText>
+                            <RadzenText TextStyle="TextStyle.Overline">Capital Pendiente de Cobro</RadzenText>
+                            <RadzenText TextStyle="TextStyle.H5"><b>RD$ @allPrestamos.Where(p => p.Estado == "Activo").Sum(p => p.Monto).ToString("N2")</b></RadzenText>
                         </RadzenStack>
                     </RadzenStack>
                 </RadzenCard>
             </RadzenColumn>
-            <RadzenColumn Size="12" SizeMD="4">
-                <RadzenCard Variant="Variant.Flat" Class="rz-background-color-info-lighter rz-p-4">
+            <RadzenColumn Size="12" SizeMD="6">
+                <RadzenCard Variant="Variant.Flat" Class="rz-background-color-warning-lighter rz-p-4">
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
-                        <RadzenIcon Icon="assignment_turned_in" Style="color: var(--rz-info)" />
+                        <RadzenIcon Icon="assignment_late" Style="color: var(--rz-warning)" />
                         <RadzenStack Gap="0">
-                            <RadzenText TextStyle="TextStyle.Overline">Préstamos Activos</RadzenText>
-                            <RadzenText TextStyle="TextStyle.H5"><b>@allPrestamos.Count(p => p.Estado == "Activo")</b></RadzenText>
+                            <RadzenText TextStyle="TextStyle.Overline">Solicitudes por Aprobar</RadzenText>
+                            <RadzenText TextStyle="TextStyle.H5"><b>@allPrestamos.Count(p => p.Estado == "Pendiente")</b></RadzenText>
                         </RadzenStack>
                     </RadzenStack>
                 </RadzenCard>
             </RadzenColumn>
         </RadzenRow>
 
-        @* Tabla Principal con RadzenDataGrid *@
+        @* Tabla Principal Unificada con Badges de Estado *@
         <RadzenCard Class="rz-shadow-4">
             <RadzenDataGrid @ref="grid" Data="@allPrestamos" TItem="Prestamo" 
                             AllowFiltering="true" FilterMode="FilterMode.Simple" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
@@ -74,35 +75,33 @@
 
                     <RadzenDataGridColumn TItem="Prestamo" Property="FechaPrestamo" Title="Fecha" FormatString="{0:dd/MM/yyyy}" Width="130px" />
                     
-                    <RadzenDataGridColumn TItem="Prestamo" Property="Monto" Title="Monto">
+                    <RadzenDataGridColumn TItem="Prestamo" Property="Monto" Title="Monto RD$">
                         <Template Context="p">
-                            <span style="font-weight: bold; color: var(--rz-text-color);">RD$ @p.Monto.ToString("N2")</span>
+                            <span style="font-weight: bold; color: var(--rz-text-color);">@p.Monto.ToString("N2")</span>
                         </Template>
                     </RadzenDataGridColumn>
 
-                    <RadzenDataGridColumn TItem="Prestamo" Property="TasaInteres" Title="Tasa (%)" Width="100px">
-                        <Template Context="p">
-                            @p.TasaInteres%
-                        </Template>
-                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="Prestamo" Property="TipoPrestamo" Title="Tipo" />
 
                     <RadzenDataGridColumn TItem="Prestamo" Property="Estado" Title="Estado" Width="120px">
                         <Template Context="p">
                             <RadzenBadge Text="@p.Estado" 
-                                         BadgeStyle="@(p.Estado == "Activo" ? BadgeStyle.Success : p.Estado == "Pendiente" ? BadgeStyle.Warning : BadgeStyle.Secondary)" 
+                                         BadgeStyle="@(p.Estado == "Activo" ? BadgeStyle.Success : p.Estado == "Pendiente" ? BadgeStyle.Warning : p.Estado == "Pagado" ? BadgeStyle.Info : BadgeStyle.Secondary)" 
                                          IsPill="true" />
                         </Template>
                     </RadzenDataGridColumn>
 
-                    @* Acciones *@
+                    @* Acciones Unificadas (Opción A: /edit/{id}) *@
                     <RadzenDataGridColumn TItem="Prestamo" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="160px">
                         <Template Context="p">
                             <RadzenButton Icon="visibility" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Medium" 
                                           Click="@(() => NavigationManager.NavigateTo($"/prestamos/details?id={p.Id}"))" />
                             <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Warning" Variant="Variant.Flat" Size="ButtonSize.Medium" 
                                           Click="@(() => NavigationManager.NavigateTo($"/prestamos/edit?id={p.Id}"))" Class="rz-mx-1" />
-                            <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Flat" Size="ButtonSize.Medium" 
-                                          Click="@(() => NavigationManager.NavigateTo($"/prestamos/delete?id={p.Id}"))" />
+                            @if(p.Estado != "Pagado"){
+                                <RadzenButton Icon="receipt" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" 
+                                              Click="@(() => NavigationManager.NavigateTo($"/pagoprestamos/create?id={p.Id}"))" />
+                            }
                         </Template>
                     </RadzenDataGridColumn>
                 </Columns>
@@ -117,11 +116,6 @@
     private List<Prestamo> allPrestamos = new();
 
     protected override async Task OnInitializedAsync()
-    {
-        await LoadData();
-    }
-
-    private async Task LoadData()
     {
         using var context = DbFactory.CreateDbContext();
         allPrestamos = await context.Prestamos
