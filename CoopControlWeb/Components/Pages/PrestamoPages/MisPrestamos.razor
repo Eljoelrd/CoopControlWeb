@@ -5,6 +5,7 @@
 @using CoopControlWeb.Modelos
 @inject IDbContextFactory<AppDBContext> DbFactory
 @inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
 @rendermode InteractiveServer
 @attribute [Authorize(Roles = "Socio")]
 
@@ -36,7 +37,12 @@
                         <RadzenText TextStyle="TextStyle.Body2">Fecha: @prestamo.FechaPrestamo.ToShortDateString()</RadzenText>
                     </RadzenColumn>
                     <RadzenColumn Size="12" SizeMD="4" Class="rz-text-align-right">
-                        <RadzenBadge BadgeStyle="@GetStatusStyle(prestamo.Estado)" Text="@prestamo.Estado" />
+                        <RadzenStack AlignItems="AlignItems.End" Gap="0.5rem">
+                            <RadzenBadge BadgeStyle="@GetStatusStyle(prestamo.Estado)" Text="@prestamo.Estado" />
+                            <RadzenButton Icon="description" Text="Ver Certificado" ButtonStyle="ButtonStyle.Info" 
+                                          Variant="Variant.Flat" Size="ButtonSize.Small" 
+                                          Click="@(() => NavigationManager.NavigateTo($"/mis-prestamos/certificado/{prestamo.Id}"))" />
+                        </RadzenStack>
                     </RadzenColumn>
                 </RadzenRow>
             </RadzenCard>

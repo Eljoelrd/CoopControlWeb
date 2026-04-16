@@ -1,4 +1,4 @@
-﻿@page "/mis-prestamos/certificado"
+﻿@page "/mis-prestamos/certificado/{Id:int}"
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.EntityFrameworkCore
@@ -31,7 +31,7 @@
 
                 <hr style="border-top: 2px solid var(--rz-border-color);" />
 
-                <RadzenRowGapGap="1rem">
+                <RadzenRow Gap="1rem">
                     <RadzenColumn Size="12" SizeMD="4">
                         <RadzenText TextStyle="TextStyle.Overline">Socio de la Cooperativa</RadzenText>
                         <RadzenText TextStyle="TextStyle.H6"><b>@prestamo.Socio?.Nombre @prestamo.Socio?.Apellido</b></RadzenText>
@@ -45,11 +45,11 @@
                         <RadzenText TextStyle="TextStyle.Overline">Tipo de Crédito</RadzenText>
                         <RadzenText TextStyle="TextStyle.H6"><b>@prestamo.TipoPrestamo</b></RadzenText>
                     </RadzenColumn>
-                </RadzenRowGapGap>
+                </RadzenRow>
 
                 <RadzenCard Class="rz-background-color-panel rz-mt-4">
                     <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-4" Style="color: var(--rz-primary);">Términos y Condiciones Financieras</RadzenText>
-                    <RadzenRowGapGap="1rem">
+                    <RadzenRow Gap="1rem">
                         <RadzenColumn Size="6" SizeMD="3">
                             <RadzenText TextStyle="TextStyle.Overline">Capital Prestado RD$</RadzenText>
                             <RadzenText TextStyle="TextStyle.H5">@prestamo.Monto.ToString("N2")</RadzenText>
@@ -66,19 +66,19 @@
                             <RadzenText TextStyle="TextStyle.Overline">Cuota Mensual RD$</RadzenText>
                             <RadzenText TextStyle="TextStyle.H5"><b>@(prestamo.CuotaMensual?.ToString("N2") ?? "0.00")</b></RadzenText>
                         </RadzenColumn>
-                    </RadzenRowGapGap>
+                    </RadzenRow>
                 </RadzenCard>
 
                 <RadzenRow Class="rz-mt-6">
                     <RadzenColumn Size="12" SizeMD="6">
                         <RadzenCard Variant="Variant.Flat" Class="rz-background-color-success-lighter rz-p-4 text-center">
-                            <RadzenText TextStyle="TextStyle.Overline">Total RD$ RD$ (Capital + Interés)</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Overline">Total (Capital + Interés) RD$</RadzenText>
                             <RadzenText TextStyle="TextStyle.H4"><b>@(prestamo.TotalConInteres?.ToString("N2") ?? "0.00")</b></RadzenText>
                         </RadzenCard>
                     </RadzenColumn>
                     <RadzenColumn Size="12" SizeMD="6">
                         <RadzenCard Variant="Variant.Flat" Class="rz-background-color-primary-lighter rz-p-4 text-center">
-                            <RadzenText TextStyle="TextStyle.Overline">Saldo Pendiente RD$ RD$ (Actualizado)</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Overline">Saldo Pendiente (Actualizado) RD$</RadzenText>
                             <RadzenText TextStyle="TextStyle.H4" Style="color: var(--rz-primary);"><b>@prestamo.SaldoPendiente.ToString("N2")</b></RadzenText>
                         </RadzenCard>
                     </RadzenColumn>
