@@ -6,48 +6,45 @@
 @inject UserService userService
 @rendermode InteractiveServer
 
-<h5>Cambiar Contraseña</h5>
-<EditForm Model="passwordModel" OnValidSubmit="CambiarPassword" FormName="PasswordForm">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
+<RadzenText TextStyle="TextStyle.Subtitle1"><b>Cambiar Contraseña</b></RadzenText>
 
-    <div class="mb-3">
-        <label>Contraseña actual</label>
-        <InputText @bind-Value="passwordModel.CurrentPassword" type="password" class="form-control" />
-    </div>
+<RadzenTemplateForm TItem="PasswordModel" Data="@passwordModel" Submit="@CambiarPassword">
+    <RadzenStack Gap="1.5rem" Style="max-width: 450px;">
+        <RadzenFormField Text="Contraseña actual" Variant="Variant.Outlined">
+            <RadzenPassword @bind-Value="@passwordModel.CurrentPassword" Name="CurrentPassword" Style="width: 100%;" />
+        </RadzenFormField>
+        <RadzenRequiredValidator Component="CurrentPassword" Text="La contraseña actual es obligatoria" Style="position: absolute" />
 
-    <div class="mb-3">
-        <label>Nueva contraseña</label>
-        <InputText @bind-Value="passwordModel.NewPassword" type="password" class="form-control" />
-    </div>
+        <RadzenFormField Text="Nueva contraseña" Variant="Variant.Outlined">
+            <RadzenPassword @bind-Value="@passwordModel.NewPassword" Name="NewPassword" Style="width: 100%;" />
+        </RadzenFormField>
+        <RadzenRequiredValidator Component="NewPassword" Text="La nueva contraseña es obligatoria" Style="position: absolute" />
+        <RadzenLengthValidator Component="NewPassword" Min="6" Text="Debe tener al menos 6 caracteres" Style="position: absolute" />
 
-    <div class="mb-3">
-        <label>Confirmar nueva contraseña</label>
-        <InputText @bind-Value="passwordModel.ConfirmPassword" type="password" class="form-control" />
-    </div>
+        <RadzenFormField Text="Confirmar nueva contraseña" Variant="Variant.Outlined">
+            <RadzenPassword @bind-Value="@passwordModel.ConfirmPassword" Name="ConfirmPassword" Style="width: 100%;" />
+        </RadzenFormField>
+        <RadzenRequiredValidator Component="ConfirmPassword" Text="Debe confirmar la contraseña" Style="position: absolute" />
+        <RadzenCompareValidator Component="ConfirmPassword" Value="@passwordModel.NewPassword" Text="Las contraseñas no coinciden" Style="position: absolute" />
 
-    <button class="btn btn-warning">Actualizar contraseña</button>
-</EditForm>
+        <RadzenButton ButtonType="ButtonType.Submit" Text="Actualizar contraseña" Icon="lock_reset" ButtonStyle="ButtonStyle.Warning" Class="rz-mt-2" />
+    </RadzenStack>
+</RadzenTemplateForm>
 
 @if (!string.IsNullOrEmpty(passwordMessage))
 {
-    <div class="@passwordMessageCss mt-2">@passwordMessage</div>
+    <RadzenAlert AlertStyle="@passwordAlertStyle" Variant="Variant.Flat" Shade="Shade.Lighter" ShowIcon="true" Class="rz-mt-4">
+        @passwordMessage
+    </RadzenAlert>
 }
 
 @code {
     private PasswordModel passwordModel = new();
     private string passwordMessage = "";
-    private string passwordMessageCss = "";
+    private AlertStyle passwordAlertStyle = AlertStyle.Info;
 
     private async Task CambiarPassword()
     {
-        if (passwordModel.NewPassword != passwordModel.ConfirmPassword)
-        {
-            passwordMessage = "Las contraseñas no coinciden ❌";
-            passwordMessageCss = "alert alert-danger";
-            return;
-        }
-
         var state = await AuthProvider.GetAuthenticationStateAsync();
         var currentUser = state.User;
 
@@ -62,14 +59,14 @@
                 userService.UpdateUser(dbUser);
 
                 passwordMessage = "Contraseña actualizada correctamente ✅";
-                passwordMessageCss = "alert alert-success";
+                passwordAlertStyle = AlertStyle.Success;
                 // Reiniciar formulario
                 passwordModel = new PasswordModel();
             }
             else
             {
                 passwordMessage = "La contraseña actual no es correcta ❌";
-                passwordMessageCss = "alert alert-danger";
+                passwordAlertStyle = AlertStyle.Danger;
             }
         }
     }
