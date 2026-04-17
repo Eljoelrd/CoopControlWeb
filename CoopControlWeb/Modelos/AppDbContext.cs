@@ -16,6 +16,8 @@ namespace CoopControlWeb.Modelos
         public DbSet<Socios> Socios { get; set; } = default!;
         public DbSet<User> Users { get; set; } = default!;
         public DbSet<PagoPrestamo> PagoPrestamo { get; set; } = default!;
+        public DbSet<Certificado> Certificados { get; set; } = default!;
+
 
         // === NUEVA ENTIDAD: DEPOSITOS ===
         public DbSet<Deposito> Depositos { get; set; } = default!;
@@ -44,8 +46,23 @@ namespace CoopControlWeb.Modelos
                 entity.ToTable("Prestamo");
                 entity.HasKey(p => p.Id);
                 entity.Property(p => p.Monto).HasColumnType("decimal(18,2)").IsRequired();
+                entity.Property(p => p.TasaInteres).HasColumnType("decimal(5,2)").IsRequired(false);
                 entity.Property(p => p.Estado).HasMaxLength(20).IsRequired();
                 entity.Property(p => p.Observaciones).HasMaxLength(255);
+            });
+
+            // === CONFIGURACIÓN DE APORTE ===
+            modelBuilder.Entity<Aporte>(entity =>
+            {
+                entity.ToTable("Aportes");
+                entity.Property(a => a.Monto).HasColumnType("decimal(18,2)").IsRequired();
+            });
+
+            // === CONFIGURACIÓN DE PAGO PRESTAMO ===
+            modelBuilder.Entity<PagoPrestamo>(entity =>
+            {
+                entity.ToTable("PagoPrestamo");
+                entity.Property(p => p.Monto).HasColumnType("decimal(18,2)").IsRequired();
             });
 
             // === CONFIGURACIÓN DE DEPOSITO (NUEVO) ===

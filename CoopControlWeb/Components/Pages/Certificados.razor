@@ -1,0 +1,92 @@
+@page "/certificados"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Admin, Cajero")]
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using CoopControlWeb.Modelos
+@inject IDbContextFactory<AppDBContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Certificados - CoopControl</PageTitle>
+
+<RadzenStack Gap="1.5rem" Class="rz-p-6">
+    <RadzenRow AlignItems="AlignItems.Center">
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenText TextStyle="TextStyle.H4" Class="rz-m-0">Gestión de Certificados</RadzenText>
+            <RadzenText TextStyle="TextStyle.Caption">Control de certificados de depósito a plazo y aportaciones</RadzenText>
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="6" Class="rz-text-align-right">
+            <RadzenButton Text="Emitir Nuevo" Icon="add_circle" ButtonStyle="ButtonStyle.Primary" 
+                          Click="@(() => NavigationManager.NavigateTo("/certificados/nuevo"))" />
+        </RadzenColumn>
+    </RadzenRow>
+
+    <RadzenDataGrid Data="@certificados" TItem="Certificado" AllowPaging="true" PageSize="10" 
+                    AllowSorting="true" AllowFiltering="true" FilterMode="FilterMode.Simple" Responsive="true"
+                    EmptyText="No se encontraron certificados registrados.">
+        <Columns>
+            <RadzenDataGridColumn TItem="Certificado" Property="Socio.Nombre" Title="Socio">
+                <Template Context="c">
+                    @c.Socio?.Nombre @c.Socio?.Apellido
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Certificado" Property="Tipo" Title="Tipo" Width="180px" />
+            <RadzenDataGridColumn TItem="Certificado" Property="Monto" Title="Monto" Width="150px">
+                <Template Context="c">
+                    <span style="font-weight: bold; color: var(--rz-primary);">
+                        RD$ @c.Monto.ToString("N2")
+                    </span>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Certificado" Property="FechaEmision" Title="Emisión" FormatString="{0:dd/MM/yyyy}" Width="120px" />
+            <RadzenDataGridColumn TItem="Certificado" Property="FechaVencimiento" Title="Vencimiento" FormatString="{0:dd/MM/yyyy}" Width="120px" />
+            <RadzenDataGridColumn TItem="Certificado" Title="Estado" TextAlign="TextAlign.Center" Width="130px">
+                <Template Context="c">
+                    <RadzenBadge BadgeStyle="@GetBadgeStyle(c.Estado)" Text="@c.Estado" Variant="Variant.Flat" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Certificado" Title="Acciones" TextAlign="TextAlign.Center" Width="150px" Filterable="false" Sortable="false">
+                <Template Context="c">
+                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Center" Gap="0.5rem">
+                        <RadzenButton Icon="visibility" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Tooltip="Ver Detalles"
+                                      Click="@(() => NavigationManager.NavigateTo($"/certificados/detalles/{c.Id}"))" />
+                        <RadzenButton Icon="print" ButtonStyle="ButtonStyle.Secondary" Size="ButtonSize.Small" Tooltip="Imprimir Certificado" />
+                    </RadzenStack>
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+</RadzenStack>
+
+@code {
+    private List<Certificado> certificados = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarCertificados();
+    }
+
+    private async Task CargarCertificados()
+    {
+        using var context = DbFactory.CreateDbContext();
+        try 
+        {
+            certificados = await context.Set<Certificado>()
+                .Include(c => c.Socio)
+                .OrderByDescending(c => c.FechaEmision)
+                .ToListAsync();
+        }
+        catch (Exception)
+        {
+            certificados = new List<Certificado>();
+        }
+    }
+
+    private BadgeStyle GetBadgeStyle(string? estado) => estado switch
+    {
+        "Activo" => BadgeStyle.Success,
+        "Vencido" => BadgeStyle.Warning,
+        "Cancelado" => BadgeStyle.Danger,
+        _ => BadgeStyle.Info
+    };
+}
