@@ -35,10 +35,16 @@
                     <RadzenBadge BadgeStyle="BadgeStyle.Primary" Text="@p.Estado" Variant="Variant.Flat" />
                 </Template>
             </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="Prestamo" Title="Acciones" TextAlign="TextAlign.Right">
+            <RadzenDataGridColumn TItem="Prestamo" Title="Acciones" TextAlign="TextAlign.Center" Width="200px">
                 <Template Context="p">
-                    <RadzenButton Icon="fact_check" ButtonStyle="ButtonStyle.Success" Tooltip="Evaluar / Aprobar"
-                                  Click="@(() => NavigationManager.NavigateTo($"/prestamos/edit?id={p.Id}"))" />
+                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Center" Gap="0.5rem">
+                        <RadzenButton Icon="check_circle" ButtonStyle="ButtonStyle.Success" Tooltip="Aprobar"
+                                      Click="@(() => ProcesarSolicitud(p, "Aprobado"))" Size="ButtonSize.Small" />
+                        <RadzenButton Icon="cancel" ButtonStyle="ButtonStyle.Danger" Tooltip="Rechazar"
+                                      Click="@(() => ProcesarSolicitud(p, "Rechazado"))" Size="ButtonSize.Small" />
+                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Tooltip="Ver Detalles"
+                                      Click="@(() => NavigationManager.NavigateTo($"/prestamos/edit?id={p.Id}"))" Size="ButtonSize.Small" />
+                    </RadzenStack>
                 </Template>
             </RadzenDataGridColumn>
         </Columns>
@@ -50,11 +56,28 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await CargarSolicitudes();
+    }
+
+    private async Task CargarSolicitudes()
+    {
         using var context = DbFactory.CreateDbContext();
         solicitudes = await context.Prestamos
             .Include(p => p.Socio)
             .Where(p => p.Estado == "Pendiente")
             .OrderByDescending(p => p.FechaPrestamo)
             .ToListAsync();
+    }
+
+    private async Task ProcesarSolicitud(Prestamo prestamo, string nuevoEstado)
+    {
+        using var context = DbFactory.CreateDbContext();
+        var p = await context.Prestamos.FindAsync(prestamo.Id);
+        if (p != null)
+        {
+            p.Estado = nuevoEstado;
+            await context.SaveChangesAsync();
+            await CargarSolicitudes();
+        }
     }
 }
