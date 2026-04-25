@@ -27,6 +27,11 @@ namespace CoopControlWeb.Modelos
         [ForeignKey("PrestamoId")]
         public Prestamo? Prestamo { get; set; }
 
+        public int? AhorroId { get; set; } // <-- Agregar esta propiedad
+
+        [ForeignKey("AhorroId")]
+        public Ahorro? Ahorro { get; set; } // <-- Agregar esta propiedad
+
         // Nuevo: tipo de ahorro asociado cuando TipoDeposito == "AhorroLibre"
         [NotMapped]
         [StringLength(50)]

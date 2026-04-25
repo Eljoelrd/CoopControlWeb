@@ -4,6 +4,7 @@
 @using CoopControlWeb.Modelos
 @inject IDbContextFactory<AppDBContext> DbFactory
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JS
 
 <PageTitle>Eliminar Depósito</PageTitle>
 
@@ -74,6 +75,7 @@
             .Include(d => d.Socio)
             .Include(d => d.Aporte)
             .Include(d => d.Prestamo)
+            .Include(d => d.Ahorro)
             .FirstOrDefaultAsync(d => d.Id == Id);
 
         if (deposito == null)
@@ -86,17 +88,29 @@
     {
         if (deposito == null) return;
 
-        using var context = DbFactory.CreateDbContext();
-        var existing = await context.Depositos.FindAsync(deposito.Id);
-        if (existing == null)
+        try
         {
+            using var context = DbFactory.CreateDbContext();
+
+            // Llamada segura al procedimiento almacenado (asegúrese de ejecutar el script SQL en la BD)
+            await context.Database.ExecuteSqlInterpolatedAsync($"EXEC dbo.sp_DeleteDepositoAndAhorro @DepositoId = {deposito.Id}");
+
+            // Reconsultar en una nueva instancia de contexto para confirmar la eliminación
+            using var checkContext = DbFactory.CreateDbContext();
+            var stillExists = await checkContext.Depositos.AnyAsync(d => d.Id == deposito.Id);
+            if (stillExists)
+            {
+                await JS.InvokeVoidAsync("alert", "No se pudo eliminar el depósito. Revise permisos, triggers o el procedimiento almacenado.");
+                Console.Error.WriteLine($"sp_DeleteDepositoAndAhorro no eliminó el depósito Id={deposito.Id}");
+                return;
+            }
+
             NavigationManager.NavigateTo("/depositos");
-            return;
         }
-
-        context.Depositos.Remove(existing);
-        await context.SaveChangesAsync();
-
-        NavigationManager.NavigateTo("/depositos");
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Error al eliminar depósito: {ex.Message}");
+            Console.Error.WriteLine(ex);
+        }
     }
 }

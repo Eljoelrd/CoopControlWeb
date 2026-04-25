@@ -54,7 +54,7 @@
                                         <RadzenDropDown @bind-Value="deposito.TipoDeposito"
                                                         Data="@tiposDeposito"
                                                         Placeholder="Seleccione el tipo..."
-                                                        Change="@( (object value) => OnTipoChanged() )" />
+                                                        Change="@((object value) => OnTipoChanged())" />
                                     </RadzenFormField>
                                 </RadzenColumn>
                                 <RadzenColumn Size="12" SizeMD="6">
@@ -344,6 +344,7 @@
                     if (ahorroExistente != null)
                     {
                         ahorroExistente.Saldo += deposito.Monto;
+                        deposito.AhorroId = ahorroExistente.Id; // ✅ ASIGNAR AQUÍ
                     }
                     else
                     {
@@ -355,6 +356,9 @@
                             FechaCreacion = DateTime.Now
                         };
                         await context.Ahorros.AddAsync(nuevoAhorro);
+                        // Guardar primero para obtener el ID y asignarlo al depósito
+                        await context.SaveChangesAsync();
+                        deposito.AhorroId = nuevoAhorro.Id; // ✅ ASIGNAR AQUÍ
                     }
                 }
             }
