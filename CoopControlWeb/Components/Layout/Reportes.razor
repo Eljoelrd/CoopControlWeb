@@ -1,0 +1,139 @@
+@page "/reportes"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using CoopControlWeb.Modelos
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Admin, Cajero")]
+@inject IDbContextFactory<AppDBContext> DbFactory
+
+<PageTitle>Reportes Generales - CoopControl Web</PageTitle>
+
+<RadzenStack Gap="1.5rem" Class="rz-p-6">
+    <RadzenRow AlignItems="AlignItems.Center">
+        <RadzenColumn Size="12" SizeMD="6">
+            <RadzenText TextStyle="TextStyle.H4" Class="rz-m-0" Style="color: var(--rz-primary-dark);">Centro de Reportes</RadzenText>
+            <RadzenText TextStyle="TextStyle.Body2" Class="rz-color-text-secondary">Consolidado de información operativa y financiera institucional</RadzenText>
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="6" Class="rz-text-align-right">
+            <RadzenButton Icon="description" Text="Exportar Informe Global" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Flat" />
+        </RadzenColumn>
+    </RadzenRow>
+
+    <RadzenTabs TabPosition="TabPosition.Top" RenderMode="TabRenderMode.Client">
+        <Tabs>
+            @* REPORTE DE SOCIOS *@
+            <RadzenTabsItem Text="Listado de Socios" Icon="group">
+                <RadzenDataGrid Data="@sociosList" TItem="Socios" AllowPaging="true" PageSize="10" 
+                                AllowSorting="true" AllowFiltering="true" FilterMode="FilterMode.Simple"
+                                Responsive="true" Class="rz-shadow-1">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="Socios" Property="Cedula" Title="Cédula" Width="140px" />
+                        <RadzenDataGridColumn TItem="Socios" Title="Nombre Completo">
+                            <Template Context="s">
+                                <b>@s.Nombre @s.Apellido</b>
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="Socios" Property="FechaIngreso" Title="Fecha Ingreso" FormatString="{0:dd/MM/yyyy}" Width="150px" />
+                    </Columns>
+                </RadzenDataGrid>
+            </RadzenTabsItem>
+
+            @* REPORTE FINANCIERO *@
+            <RadzenTabsItem Text="Resumen Financiero" Icon="show_chart">
+                <RadzenRow Gap="1rem">
+                    <RadzenColumn Size="12" SizeMD="4">
+                        <RadzenCard Variant="Variant.Flat" Style="background-color: var(--rz-info-lighter);">
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                                <RadzenIcon Icon="payments" Style="font-size: 2.5rem; color: var(--rz-info);" />
+                                <RadzenStack Gap="0">
+                                    <RadzenText TextStyle="TextStyle.Caption">Total Aportes</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.H5"><b>RD$ @totalAportes.ToString("N2")</b></RadzenText>
+                                </RadzenStack>
+                            </RadzenStack>
+                        </RadzenCard>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="4">
+                        <RadzenCard Variant="Variant.Flat" Style="background-color: var(--rz-success-lighter);">
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                                <RadzenIcon Icon="account_balance_wallet" Style="font-size: 2.5rem; color: var(--rz-success);" />
+                                <RadzenStack Gap="0">
+                                    <RadzenText TextStyle="TextStyle.Caption">Total en Ahorros</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.H5"><b>RD$ @totalAhorros.ToString("N2")</b></RadzenText>
+                                </RadzenStack>
+                            </RadzenStack>
+                        </RadzenCard>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="4">
+                        <RadzenCard Variant="Variant.Flat" Style="background-color: var(--rz-warning-lighter);">
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                                <RadzenIcon Icon="credit_card" Style="font-size: 2.5rem; color: var(--rz-warning);" />
+                                <RadzenStack Gap="0">
+                                    <RadzenText TextStyle="TextStyle.Caption">Cartera de Préstamos</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.H5"><b>RD$ @totalPrestamos.ToString("N2")</b></RadzenText>
+                                </RadzenStack>
+                            </RadzenStack>
+                        </RadzenCard>
+                    </RadzenColumn>
+                </RadzenRow>
+
+                <RadzenRow Class="rz-mt-6">
+                    <RadzenColumn Size="12" SizeLG="8">
+                        <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-4">Últimas Transacciones</RadzenText>
+                        <RadzenDataGrid Data="@recentDepositos" TItem="Deposito" AllowPaging="true" PageSize="5" Density="Density.Compact">
+                            <Columns>
+                                <RadzenDataGridColumn TItem="Deposito" Property="FechaDeposito" Title="Fecha" FormatString="{0:dd/MM/yyyy}" Width="120px" />
+                                <RadzenDataGridColumn TItem="Deposito" Property="Socio.Nombre" Title="Socio">
+                                    <Template Context="d">@d.Socio?.Nombre @d.Socio?.Apellido</Template>
+                                </RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="Deposito" Property="TipoDeposito" Title="Tipo" />
+                                <RadzenDataGridColumn TItem="Deposito" Property="Monto" Title="Monto" TextAlign="TextAlign.Right">
+                                    <Template Context="d"><span style="color: var(--rz-primary-dark); font-weight: bold;">@d.Monto.ToString("C")</span></Template>
+                                </RadzenDataGridColumn>
+                            </Columns>
+                        </RadzenDataGrid>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeLG="4">
+                        <RadzenCard Variant="Variant.Outlined">
+                            <RadzenText TextStyle="TextStyle.Subtitle2" TextAlign="TextAlign.Center" Class="rz-mb-4">Distribución de Activos</RadzenText>
+                            <RadzenChart Style="height: 250px;">
+                                <RadzenDonutSeries Data="@donutData" CategoryProperty="Category" ValueProperty="Value" TItem="DataItem">
+                                    <TitleTemplate>
+                                        <div class="rz-donut-content">
+                                            <div style="font-size: 0.8rem;">Finanzas</div>
+                                        </div>
+                                    </TitleTemplate>
+                                </RadzenDonutSeries>
+                            </RadzenChart>
+                        </RadzenCard>
+                    </RadzenColumn>
+                </RadzenRow>
+            </RadzenTabsItem>
+        </Tabs>
+    </RadzenTabs>
+</RadzenStack>
+
+@code {
+    private List<Socios> sociosList = new();
+    private List<Deposito> recentDepositos = new();
+    private decimal totalAportes = 0;
+    private decimal totalAhorros = 0;
+    private decimal totalPrestamos = 0;
+
+    class DataItem { public string Category { get; set; } = ""; public double Value { get; set; } }
+    private List<DataItem> donutData = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var ctx = DbFactory.CreateDbContext();
+        sociosList = await ctx.Socios.OrderByDescending(s => s.FechaIngreso).ToListAsync();
+        recentDepositos = await ctx.Depositos.Include(d => d.Socio).OrderByDescending(d => d.FechaDeposito).Take(10).ToListAsync();
+        totalAportes = await ctx.Aportes.SumAsync(a => a.Monto);
+        totalAhorros = await ctx.Ahorros.SumAsync(a => a.Saldo);
+        totalPrestamos = await ctx.Prestamos.Where(p => p.Estado == "Activo").SumAsync(p => p.Monto);
+        donutData = new List<DataItem> {
+            new DataItem { Category = "Aportes", Value = (double)totalAportes },
+            new DataItem { Category = "Ahorros", Value = (double)totalAhorros },
+            new DataItem { Category = "Préstamos", Value = (double)totalPrestamos }
+        };
+    }
+}

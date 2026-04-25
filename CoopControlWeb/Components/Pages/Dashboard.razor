@@ -1,0 +1,160 @@
+@page "/dashboard"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.EntityFrameworkCore
+@using CoopControlWeb.Modelos
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Admin, Cajero")]
+@inject IDbContextFactory<AppDBContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Dashboard - CoopControl Web</PageTitle>
+
+<RadzenStack Gap="1.5rem" Class="rz-p-6">
+    <RadzenRow AlignItems="AlignItems.Center">
+        <RadzenColumn Size="12">
+            <RadzenText TextStyle="TextStyle.H4" Class="rz-m-0" Style="color: var(--rz-primary-dark);">Panel de Control</RadzenText>
+            <RadzenText TextStyle="TextStyle.Body2" Class="rz-color-text-secondary">Resumen ejecutivo y estado operativo institucional</RadzenText>
+        </RadzenColumn>
+    </RadzenRow>
+
+    @* Tarjetas de Métricas Principales *@
+    <RadzenRow Gap="1rem">
+        <RadzenColumn Size="12" SizeMD="3">
+            <RadzenCard Variant="Variant.Flat" Class="rz-background-color-info-lighter rz-p-4">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
+                    <RadzenIcon Icon="people" Style="font-size: 3rem; color: var(--rz-info);" />
+                    <RadzenStack Gap="0">
+                        <RadzenText TextStyle="TextStyle.Caption" Class="rz-m-0">Socios Activos</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H4" Class="rz-m-0"><b>@totalSocios</b></RadzenText>
+                    </RadzenStack>
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="3">
+            <RadzenCard Variant="Variant.Flat" Class="rz-background-color-success-lighter rz-p-4">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
+                    <RadzenIcon Icon="account_balance" Style="font-size: 3rem; color: var(--rz-success);" />
+                    <RadzenStack Gap="0">
+                        <RadzenText TextStyle="TextStyle.Caption" Class="rz-m-0">Capital Total</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H5" Class="rz-m-0"><b>@totalCapital.ToString("C0")</b></RadzenText>
+                    </RadzenStack>
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="3">
+            <RadzenCard Variant="Variant.Flat" Class="rz-background-color-warning-lighter rz-p-4">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
+                    <RadzenIcon Icon="pending_actions" Style="font-size: 3rem; color: var(--rz-warning);" />
+                    <RadzenStack Gap="0">
+                        <RadzenText TextStyle="TextStyle.Caption" Class="rz-m-0">Solicitudes Pendientes</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H4" Class="rz-m-0"><b>@solicitudesPendientes</b></RadzenText>
+                    </RadzenStack>
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="3">
+            <RadzenCard Variant="Variant.Flat" Class="rz-background-color-danger-lighter rz-p-4">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
+                    <RadzenIcon Icon="payments" Style="font-size: 3rem; color: var(--rz-danger);" />
+                    <RadzenStack Gap="0">
+                        <RadzenText TextStyle="TextStyle.Caption" Class="rz-m-0">Cartera de Préstamos</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H5" Class="rz-m-0"><b>@carteraActiva.ToString("C0")</b></RadzenText>
+                    </RadzenStack>
+                </RadzenStack>
+            </RadzenCard>
+        </RadzenColumn>
+    </RadzenRow>
+
+    <RadzenRow Gap="1.5rem">
+        @* Gráfico de Tendencia de Depósitos *@
+        <RadzenColumn Size="12" SizeLG="8">
+            <RadzenCard Variant="Variant.Outlined">
+                <RadzenText TextStyle="TextStyle.Subtitle1" Class="rz-mb-4"><b>Tendencia de Depósitos (Últimos 6 meses)</b></RadzenText>
+                <RadzenChart Style="height: 300px">
+                    <RadzenAreaSeries Data="@monthlyData" CategoryProperty="Month" ValueProperty="Amount" Title="Ingresos RD$" Smooth="true" />
+                    <RadzenCategoryAxis Padding="20" />
+                    <RadzenValueAxis>
+                        <RadzenGridLines Visible="true" />
+                    </RadzenValueAxis>
+                </RadzenChart>
+            </RadzenCard>
+        </RadzenColumn>
+
+        @* Acciones Rápidas y Alertas *@
+        <RadzenColumn Size="12" SizeLG="4">
+            <RadzenStack Gap="1rem">
+                <RadzenCard Variant="Variant.Outlined">
+                    <RadzenText TextStyle="TextStyle.Subtitle1" Class="rz-mb-4"><b>Acciones Rápidas</b></RadzenText>
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenButton Text="Nueva Solicitud Préstamo" Icon="add" ButtonStyle="ButtonStyle.Primary" Click="@(() => NavigationManager.NavigateTo("/prestamos/solicitudes"))" Class="rz-w-100" />
+                        <RadzenButton Text="Ver Todos los Socios" Icon="group" ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Outlined" Click="@(() => NavigationManager.NavigateTo("/socios"))" Class="rz-w-100" />
+                        <RadzenButton Text="Generar Reporte Mensual" Icon="description" ButtonStyle="ButtonStyle.Info" Variant="Variant.Text" Click="@(() => NavigationManager.NavigateTo("/reportes"))" Class="rz-w-100" />
+                    </RadzenStack>
+                </RadzenCard>
+                
+                @if (solicitudesPendientes > 0)
+                {
+                    <RadzenAlert Title="Préstamos Pendientes" AlertStyle="AlertStyle.Warning" Variant="Variant.Flat" Shade="Shade.Lighter" ShowIcon="true">
+                        Hay solicitudes esperando aprobación. <RadzenLink Path="/prestamos/solicitudes" Text="Revisar Bandeja" />
+                    </RadzenAlert>
+                }
+            </RadzenStack>
+        </RadzenColumn>
+    </RadzenRow>
+
+    @* Actividad Reciente *@
+    <RadzenRow>
+        <RadzenColumn Size="12">
+            <RadzenCard Variant="Variant.Outlined">
+                <RadzenText TextStyle="TextStyle.Subtitle1" Class="rz-mb-4"><b>Últimas Transacciones de Caja</b></RadzenText>
+                <RadzenDataGrid Data="@recentDepositos" TItem="Deposito" Density="Density.Compact" EmptyText="No hay transacciones recientes">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="Deposito" Property="FechaDeposito" Title="Fecha" FormatString="{0:dd/MM/yyyy HH:mm}" Width="160px" />
+                        <RadzenDataGridColumn TItem="Deposito" Title="Socio">
+                            <Template Context="d">@d.Socio?.Nombre @d.Socio?.Apellido</Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="Deposito" Property="TipoDeposito" Title="Concepto" />
+                        <RadzenDataGridColumn TItem="Deposito" Property="Monto" Title="Monto" TextAlign="TextAlign.Right">
+                            <Template Context="d"><span class="rz-color-primary" style="font-weight: bold;">@d.Monto.ToString("C")</span></Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
+            </RadzenCard>
+        </RadzenColumn>
+    </RadzenRow>
+</RadzenStack>
+
+@code {
+    private int totalSocios;
+    private decimal totalCapital;
+    private int solicitudesPendientes;
+    private decimal carteraActiva;
+    private List<Deposito> recentDepositos = new();
+    private List<ChartItem> monthlyData = new();
+
+    public class ChartItem { public string Month { get; set; } = ""; public decimal Amount { get; set; } }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var ctx = DbFactory.CreateDbContext();
+        
+        totalSocios = await ctx.Socios.CountAsync();
+        totalCapital = await ctx.Aportes.SumAsync(a => a.Monto) + await ctx.Ahorros.SumAsync(a => a.Saldo);
+        solicitudesPendientes = await ctx.Prestamos.CountAsync(p => p.Estado == "Pendiente");
+        carteraActiva = await ctx.Prestamos.Where(p => p.Estado == "Activo").SumAsync(p => p.Monto);
+
+        recentDepositos = await ctx.Depositos.Include(d => d.Socio).OrderByDescending(d => d.FechaDeposito).Take(5).ToListAsync();
+
+        var startDate = DateTime.Today.AddMonths(-5);
+        startDate = new DateTime(startDate.Year, startDate.Month, 1);
+
+        var rawDeposits = await ctx.Depositos.Where(d => d.FechaDeposito >= startDate).ToListAsync();
+
+        monthlyData = rawDeposits
+            .GroupBy(d => new { d.FechaDeposito.Year, d.FechaDeposito.Month })
+            .Select(g => new { Date = new DateTime(g.Key.Year, g.Key.Month, 1), Total = g.Sum(x => x.Monto) })
+            .OrderBy(x => x.Date)
+            .Select(x => new ChartItem { Month = x.Date.ToString("MMM yy"), Amount = x.Total })
+            .ToList();
+    }
+}

@@ -49,7 +49,7 @@
 
                     <RadzenPanelMenuItem Text="Servicios de Ahorro" Icon="account_balance">
                         <RadzenPanelMenuItem Text="Aportaciones" Icon="payments" Path="/aportes" />
-                        <RadzenPanelMenuItem Text="Ahorros Retirables" Icon="account_balance_wallet" Path="/ahorros" />
+                        <RadzenPanelMenuItem Text="Ahorros Retirables" Icon="account_balance_wallet" Path="/#" />
                         <RadzenPanelMenuItem Text="Certificados (Plazo Fijo)" Icon="description" Path="/certificados" />
                     </RadzenPanelMenuItem>
 
@@ -57,7 +57,7 @@
                         <RadzenPanelMenuItem Text="Préstamos" Icon="format_list_bulleted" Path="/prestamos" />
                         <RadzenPanelMenuItem Text="Solicitudes Nuevas" Icon="add_task" Path="/prestamos/solicitudes" />
                     </RadzenPanelMenuItem>
-                    <RadzenPanelMenuItem Text="Reportes" Icon="assessment" Path="#" />
+                    <RadzenPanelMenuItem Text="Reportes" Icon="assessment" Path="/reportes" />
                     <RadzenPanelMenuItem Text="Configuración" Icon="settings" Path="/configuraciones" />
                 </Authorized>
             </AuthorizeView>
@@ -91,14 +91,14 @@
     <RadzenFooter>
         <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Class="rz-px-4">
             <RadzenText TextStyle="TextStyle.Caption">© 2026 CoopControl Web </RadzenText>
-            <RadzenText TextStyle="TextStyle.Caption"><b>Estado:</b> Conectado como @userRole</RadzenText>
+            <RadzenText TextStyle="TextStyle.Caption"><b>Estado:</b> @(string.IsNullOrEmpty(userRole) ? "Invitado" : $"Conectado como {userRole}")</RadzenText>
         </RadzenStack>
     </RadzenFooter>
 </RadzenLayout>
 
 @code {
     private bool sidebarExpanded = true;
-    private string userRole = "";
+    private string userRole = "Invitado";
 
     protected override async Task OnParametersSetAsync()
     {
