@@ -3,6 +3,7 @@
 @using Microsoft.EntityFrameworkCore
 @using CoopControlWeb.Modelos
 @rendermode InteractiveServer
+@using System.Security.Claims
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager NavigationManager
 @inject IDbContextFactory<AppDBContext> DbFactory
@@ -48,7 +49,7 @@
             <AuthorizeView>
                 <Authorized>
                     <RadzenText TextStyle="TextStyle.H6" Class="rz-color-white rz-mt-4">
-                        Hola, @context.User.Identity?.Name 👋
+                        Hola, @fullName👋
                     </RadzenText>
                 </Authorized>
             </AuthorizeView>
@@ -172,7 +173,22 @@
 
 @code {
     // Podríamos cargar noticias o anuncios aquí en el futuro
-    protected override void OnInitialized()
+    private string fullName = "Usuario";
+
+    protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            var email = user.FindFirst(ClaimTypes.Email)?.Value ?? user.Identity?.Name;
+            if (!string.IsNullOrEmpty(email))
+            {
+                using var ctx = await DbFactory.CreateDbContextAsync();
+                var dbUser = await ctx.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
+                if (dbUser != null) fullName = $"{dbUser.Nombre} {dbUser.Apellido}";
+            }
+        }
     }
 }

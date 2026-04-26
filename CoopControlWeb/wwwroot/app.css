@@ -79,3 +79,19 @@
         transform: translateY(-2px);
     }
 
+/* Chip de perfil de usuario en el header */
+.user-profile-chip {
+    padding: 4px 16px 4px 8px;
+    border-radius: 30px;
+    background: rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: inline-flex;
+    align-items: center;
+}
+
+.user-profile-chip:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}

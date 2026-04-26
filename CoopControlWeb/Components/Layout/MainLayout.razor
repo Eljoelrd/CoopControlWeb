@@ -1,8 +1,11 @@
 ﻿@inherits LayoutComponentBase
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
+@using Microsoft.EntityFrameworkCore
+@using CoopControlWeb.Modelos
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager NavigationManager
+@inject IDbContextFactory<AppDBContext> DbFactory
 @rendermode InteractiveServer
 
 <RadzenLayout Style="grid-template-areas: 'rz-header rz-header' 'rz-sidebar rz-body' 'rz-footer rz-footer'; grid-template-columns: auto 1fr; grid-template-rows: auto 1fr auto; height: 100vh;">
@@ -15,9 +18,14 @@
                 <RadzenAppearanceToggle />
                 <AuthorizeView>
                     <Authorized>
-                        <RadzenLink Path="perfil" Style="color: white; text-decoration: none;" Class="rz-display-none rz-display-md-block">
-                            @context.User.Identity?.Name
-                            <RadzenBadge Text="@userRole" IsPill="true" BadgeStyle="BadgeStyle.Secondary" Class="rz-me-2" />
+                        <RadzenLink Path="perfil" Style="text-decoration: none;" Class="rz-display-none rz-display-md-block user-profile-chip">
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                <RadzenIcon Icon="account_circle" Style="font-size: 2rem; color: white;" />
+                                <RadzenStack Gap="0" AlignItems="AlignItems.Start">
+                                    <RadzenText Text="@fullName" Style="color: white; font-weight: 600; line-height: 1.1; margin: 0;" />
+                                    <RadzenText Text="@userRole" TextStyle="TextStyle.Caption" Style="color: rgba(255,255,255,0.8); line-height: 1; margin: 0;" />
+                                </RadzenStack>
+                            </RadzenStack>
                         </RadzenLink>
                         <RadzenButton Icon="logout" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Text"
                                       Click="@(() => NavigationManager.NavigateTo("/logout", true))" />
@@ -99,6 +107,7 @@
 @code {
     private bool sidebarExpanded = true;
     private string userRole = "Invitado";
+    private string fullName = "Usuario";
 
     protected override async Task OnParametersSetAsync()
     {
@@ -108,6 +117,17 @@
         if (user.Identity?.IsAuthenticated == true)
         {
             userRole = user.FindFirst(ClaimTypes.Role)?.Value ?? "Socio";
+
+            var email = user.FindFirst(ClaimTypes.Email)?.Value ?? user.Identity?.Name;
+            if (!string.IsNullOrEmpty(email))
+            {
+                using var ctx = await DbFactory.CreateDbContextAsync();
+                var dbUser = await ctx.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
+                if (dbUser != null)
+                {
+                    fullName = $"{dbUser.Nombre} {dbUser.Apellido}";
+                }
+            }
         }
     }
 }
