@@ -1,0 +1,202 @@
+@page "/ahorros/transferir-retirable"
+@rendermode InteractiveServer
+@using CoopControlWeb.Modelos
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<AppDBContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Transferir a Ahorro Retirable</PageTitle>
+
+<div class="rz-p-6 rz-p-md-10">
+    <RadzenCard>
+        <RadzenStack Gap="1rem">
+            <RadzenText TextStyle="TextStyle.H5">Transferir a Ahorro Retirable</RadzenText>
+            <RadzenText TextStyle="TextStyle.Body2" Class="rz-color-text-secondary">
+                Mueva fondos desde el ahorro normal del socio hacia su cuenta retirable.
+            </RadzenText>
+
+            <RadzenRow>
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenFormField Text="Socio" Variant="Variant.Outlined">
+                        <RadzenDropDown @bind-Value="selectedSocioId"
+                                        Data="@socios"
+                                        TextProperty="NombreCompleto"
+                                        ValueProperty="Id"
+                                        AllowFiltering="true"
+                                        Change="@(async (object? v) => await OnSocioChanged((int?)v))" />
+                    </RadzenFormField>
+                </RadzenColumn>
+
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenFormField Text="Ahorro Origen" Variant="Variant.Outlined">
+                        <RadzenDropDown @bind-Value="selectedAhorroOrigenId"
+                                        Data="@ahorrosOrigen"
+                                        TextProperty="Descripcion"
+                                        ValueProperty="Id"
+                                        Placeholder="Seleccione ahorro origen..." />
+                    </RadzenFormField>
+                </RadzenColumn>
+            </RadzenRow>
+
+            <RadzenRow>
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenFormField Text="Monto" Variant="Variant.Outlined">
+                        <!-- CORRECCIÓN: quitar sufijo 'm' de los atributos -->
+                        <RadzenNumeric @bind-Value="monto" Min="0.01m" Step="0.01m" Format="c" />
+                    </RadzenFormField>
+                </RadzenColumn>
+
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenFormField Text="Observaciones" Variant="Variant.Outlined">
+                        <RadzenTextBox @bind-Value="observaciones" />
+                    </RadzenFormField>
+                </RadzenColumn>
+            </RadzenRow>
+
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                <RadzenButton Text="Cancelar" ButtonStyle="ButtonStyle.Light" Click="@(() => NavigationManager.NavigateTo("/"))" Disabled="@isProcessing" />
+                <RadzenButton Text="Transferir" ButtonStyle="ButtonStyle.Info" Click="@(async () => await EjecutarTransferencia())" Disabled="@isProcessing" />
+            </RadzenStack>
+
+            @if (!string.IsNullOrEmpty(error))
+            {
+                <div class="rz-mt-3 rz-color-danger">@error</div>
+            }
+        </RadzenStack>
+    </RadzenCard>
+</div>
+
+@code {
+    private int selectedSocioId;
+    private List<SocioDisplay> socios = new();
+    private List<AhorroDisplay> ahorrosOrigen = new();
+    private int selectedAhorroOrigenId;
+    private decimal monto;
+    private string? observaciones;
+    private string? error;
+    private bool isProcessing;
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var ctx = DbFactory.CreateDbContext();
+        socios = await ctx.Socios
+            .OrderBy(s => s.Nombre)
+            .ThenBy(s => s.Apellido)
+            .Select(s => new SocioDisplay { Id = s.Id, NombreCompleto = $"{s.Nombre} {s.Apellido} - {s.Cedula}" })
+            .ToListAsync();
+    }
+
+    private async Task OnSocioChanged(int? id)
+    {
+        if (!id.HasValue) return;
+        selectedSocioId = id.Value;
+        await CargarAhorrosOrigen(selectedSocioId);
+    }
+
+    private async Task CargarAhorrosOrigen(int socioId)
+    {
+        using var ctx = DbFactory.CreateDbContext();
+
+        var list = await ctx.Ahorros
+            .Where(a => a.SocioId == socioId)
+            .OrderByDescending(a => a.FechaCreacion)
+            .Select(a => new AhorroDisplay
+            {
+                Id = a.Id,
+                Descripcion = $"{a.Tipo} - Saldo: {a.Saldo:N2}"
+            })
+            .ToListAsync();
+
+        ahorrosOrigen = list;
+        if (ahorrosOrigen.Any())
+            selectedAhorroOrigenId = ahorrosOrigen.First().Id;
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task EjecutarTransferencia()
+    {
+        if (isProcessing) return;
+
+        error = null;
+        if (selectedSocioId == 0 || selectedAhorroOrigenId == 0 || monto <= 0)
+        {
+            error = "Complete todos los campos correctamente.";
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        isProcessing = true;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            using var ctx = DbFactory.CreateDbContext();
+            await using var tx = await ctx.Database.BeginTransactionAsync();
+
+            var ahorroOrigen = await ctx.Ahorros.FirstOrDefaultAsync(a => a.Id == selectedAhorroOrigenId && a.SocioId == selectedSocioId);
+            if (ahorroOrigen == null)
+            {
+                error = "Ahorro origen no encontrado.";
+                return;
+            }
+
+            if (ahorroOrigen.Saldo < monto)
+            {
+                error = "Saldo insuficiente en el ahorro origen.";
+                return;
+            }
+
+            ahorroOrigen.Saldo -= monto;
+
+            var deposito = new Deposito
+            {
+                SocioId = selectedSocioId,
+                FechaDeposito = DateTime.Now,
+                Monto = monto,
+                TipoDeposito = "Retirables",
+                MetodoPago = "TransferenciaInterna",
+                Observaciones = observaciones ?? $"Transferencia desde ahorro #{ahorroOrigen.Id}",
+                EstaProcesado = true,
+                UsuarioRegistro = "admin",
+                FechaCreacion = DateTime.Now
+            };
+
+            await ctx.Depositos.AddAsync(deposito);
+            await ctx.SaveChangesAsync();
+            await tx.CommitAsync();
+
+            await InvokeAsync(() => NavigationManager.NavigateTo($"/socios/ahorros?socioId={selectedSocioId}"));
+        }
+        catch (DbUpdateException dbEx)
+        {
+            var inner = dbEx.InnerException?.Message ?? dbEx.GetBaseException()?.Message ?? dbEx.Message;
+            Console.Error.WriteLine(dbEx);
+            error = "Error al transferir: " + inner;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(ex);
+            error = "Error al transferir: " + ex.Message;
+            await InvokeAsync(StateHasChanged);
+        }
+        finally
+        {
+            isProcessing = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private class SocioDisplay
+    {
+        public int Id { get; set; }
+        public string NombreCompleto { get; set; } = string.Empty;
+    }
+
+    private class AhorroDisplay
+    {
+        public int Id { get; set; }
+        public string Descripcion { get; set; } = string.Empty;
+    }
+}
