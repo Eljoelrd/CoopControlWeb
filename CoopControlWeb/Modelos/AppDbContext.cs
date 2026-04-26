@@ -26,6 +26,10 @@ namespace CoopControlWeb.Modelos
         public DbSet<Ahorro> Ahorros { get; set; } = default!;
 
 
+        // Nuevo DbSet para AhorroMovimientos
+        public DbSet<AhorroMovimiento> AhorroMovimientos { get; set; } = default!;
+
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // === CONFIGURACIÓN DE USER ===
@@ -108,6 +112,8 @@ namespace CoopControlWeb.Modelos
                 entity.Property(a => a.Saldo).HasColumnType("decimal(18,2)").IsRequired();
                 entity.Property(a => a.TasaInteresAnual).HasColumnType("decimal(5,2)");
             });
+
+            // Si es necesario, añade configuración para AhorroMovimiento aquí
         }
     }
 }
