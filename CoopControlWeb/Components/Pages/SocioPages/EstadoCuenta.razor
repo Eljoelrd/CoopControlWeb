@@ -1,60 +1,151 @@
-﻿@page "/socios/estado/{Id:int}"
+﻿@page "/mi-estado"
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore
 @using CoopControlWeb.Modelos
-@inject SocioService socioService
-@attribute [Authorize(Roles = "Admin")]
+@using System.Security.Claims
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Socio")]
+@inject IDbContextFactory<AppDBContext> DbFactory
+@inject AuthenticationStateProvider AuthStateProvider
 
-<h3>Estado de Cuenta</h3>
+<PageTitle>Mi Estado de Cuenta - CoopControl Web</PageTitle>
 
-@if (estado != null)
-{
-    <p><strong>Socio:</strong> @estado.NombreCompleto</p>
-    <p><strong>Cédula:</strong> @estado.Cedula</p>
-    <p><strong>Total Aportes:</strong> RD$ @estado.TotalAportes</p>
-    <p><strong>Total Préstamos:</strong> RD$ @estado.TotalPrestamos</p>
+<RadzenStack Gap="1.5rem" Class="rz-p-6">
+    <RadzenRow AlignItems="AlignItems.Center">
+        <RadzenColumn Size="12">
+            <RadzenText TextStyle="TextStyle.H4" Class="rz-m-0" Style="color: var(--rz-primary-dark);">Mi Estado de Cuenta</RadzenText>
+            <RadzenText TextStyle="TextStyle.Body2" Class="rz-color-text-secondary">Consulta el resumen de tus aportes, ahorros y compromisos vigentes.</RadzenText>
+        </RadzenColumn>
+    </RadzenRow>
 
-    <h5>Aportes</h5>
-    <table class="table">
-        <thead><tr><th>Fecha</th><th>Monto</th><th>Tipo</th></tr></thead>
-        <tbody>
-            @foreach (var a in estado.Aportes)
-            {
-                <tr>
-                    <td>@a.Fecha.ToShortDateString()</td>
-                    <td>RD$ @a.Monto</td>
-                    <td>@a.Tipo</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    @if (loading)
+    {
+        <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+    }
+    else if (socioActual == null)
+    {
+        <RadzenAlert Title="Información no disponible" AlertStyle="AlertStyle.Info" Variant="Variant.Flat" Shade="Shade.Lighter">
+            No se ha encontrado un perfil de socio vinculado a su cuenta de usuario. Por favor, contacte a la administración para validar su registro.
+        </RadzenAlert>
+    }
+    else
+    {
+        @* Tarjetas de Resumen Financiero Personal *@
+        <RadzenRow Gap="1rem">
+            <RadzenColumn Size="12" SizeMD="4">
+                <RadzenCard Variant="Variant.Flat" Style="border-left: 5px solid var(--rz-info); background-color: var(--rz-info-lighter);">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenText TextStyle="TextStyle.Overline" Class="rz-m-0">Mis Aportes Totales</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H5"><b>@totalAportes.ToString("C")</b></RadzenText>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="4">
+                <RadzenCard Variant="Variant.Flat" Style="border-left: 5px solid var(--rz-success); background-color: var(--rz-success-lighter);">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenText TextStyle="TextStyle.Overline" Class="rz-m-0">Ahorros Disponibles</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H5"><b>@totalAhorros.ToString("C")</b></RadzenText>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="4">
+                <RadzenCard Variant="Variant.Flat" Style="border-left: 5px solid var(--rz-danger); background-color: var(--rz-danger-lighter);">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenText TextStyle="TextStyle.Overline" Class="rz-m-0">Deuda Pendiente (Préstamos)</RadzenText>
+                        <RadzenText TextStyle="TextStyle.H5"><b>@deudaPendiente.ToString("C")</b></RadzenText>
+                    </RadzenStack>
+                </RadzenCard>
+            </RadzenColumn>
+        </RadzenRow>
 
-    <h5>Préstamos</h5>
-    <table class="table">
-        <thead><tr><th>Fecha Préstamo</th><th>Fecha Devolución</th><th>Monto</th><th>Estado</th></tr></thead>
-        <tbody>
-            @foreach (var p in estado.Prestamos)
-            {
-                <tr>
-                    <td>@p.FechaPrestamo.ToShortDateString()</td>
-                    <td>@(p.FechaDevolucion?.ToShortDateString() ?? "-")</td>
-                    <td>RD$ @p.Monto</td>
-                    <td>@p.Estado</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
-else
-{
-    <p>Cargando estado de cuenta...</p>
-}
+        <RadzenTabs RenderMode="TabRenderMode.Client" Class="rz-mt-4">
+            <Tabs>
+                <RadzenTabsItem Text="Historial de Movimientos" Icon="history">
+                    <RadzenDataGrid Data="@movimientos" TItem="Deposito" AllowPaging="true" PageSize="10" Density="Density.Compact" EmptyText="No tienes movimientos registrados">
+                        <Columns>
+                            <RadzenDataGridColumn TItem="Deposito" Property="FechaDeposito" Title="Fecha" FormatString="{0:dd/MM/yyyy}" Width="120px" />
+                            <RadzenDataGridColumn TItem="Deposito" Property="TipoDeposito" Title="Concepto" />
+                            <RadzenDataGridColumn TItem="Deposito" Property="Monto" Title="Monto" TextAlign="TextAlign.Right">
+                                <Template Context="d">
+                                    <span style="font-weight: bold; color: var(--rz-primary-dark);">@d.Monto.ToString("C")</span>
+                                </Template>
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGrid>
+                </RadzenTabsItem>
+
+                <RadzenTabsItem Text="Mis Préstamos" Icon="credit_card">
+                    @if (!prestamosActivos.Any())
+                    {
+                        <RadzenText TextStyle="TextStyle.Body2" Class="rz-p-4">Actualmente no tienes préstamos vigentes con la cooperativa.</RadzenText>
+                    }
+                    else
+                    {
+                        @foreach (var p in prestamosActivos)
+                        {
+                            <RadzenCard Class="rz-mb-4" Variant="Variant.Outlined">
+                                <RadzenRow>
+                                    <RadzenColumn Size="12" SizeMD="8">
+                                        <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-mb-0">Préstamo #@p.Id - @p.TipoPrestamo</RadzenText>
+                                        <RadzenText TextStyle="TextStyle.Caption">Desembolsado el @p.FechaPrestamo.ToShortDateString()</RadzenText>
+                                        <RadzenText TextStyle="TextStyle.Body2" Class="rz-mt-2">Monto original: @p.Monto.ToString("C") | Cuota aprox: @(p.CuotaMensual?.ToString("C") ?? "N/A")</RadzenText>
+                                    </RadzenColumn>
+                                    <RadzenColumn Size="12" SizeMD="4" Class="rz-text-align-right">
+                                        <RadzenText TextStyle="TextStyle.Caption">Saldo a Pagar</RadzenText>
+                                        <RadzenText TextStyle="TextStyle.H6" Style="color: var(--rz-danger);"><b>@p.SaldoPendiente.ToString("C")</b></RadzenText>
+                                    </RadzenColumn>
+                                </RadzenRow>
+                            </RadzenCard>
+                        }
+                    }
+                </RadzenTabsItem>
+            </Tabs>
+        </RadzenTabs>
+    }
+</RadzenStack>
 
 @code {
-    [Parameter] public int Id { get; set; }
-    private EstadoCuentaViewModel? estado;
+    private bool loading = true;
+    private Socios? socioActual;
+    private decimal totalAportes;
+    private decimal totalAhorros;
+    private decimal deudaPendiente;
+    private List<Deposito> movimientos = new();
+    private List<Prestamo> prestamosActivos = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        estado = socioService.GetEstadoCuenta(Id);
+        loading = true;
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        var email = user.FindFirst(ClaimTypes.Email)?.Value ?? user.Identity?.Name;
+
+        if (!string.IsNullOrEmpty(email))
+        {
+            using var ctx = DbFactory.CreateDbContext();
+            // Vinculamos al socio por el email de su cuenta de usuario
+            socioActual = await ctx.Socios.FirstOrDefaultAsync(s => s.Email == email || s.Cedula == email);
+
+            if (socioActual != null)
+            {
+                totalAportes = await ctx.Aportes.Where(a => a.SocioId == socioActual.Id).SumAsync(a => a.Monto);
+                totalAhorros = await ctx.Ahorros.Where(a => a.SocioId == socioActual.Id).SumAsync(a => a.Saldo);
+                
+                prestamosActivos = await ctx.Prestamos
+                    .Include(p => p.PrestamoPagos)
+                    .Where(p => p.SocioId == socioActual.Id && (p.Estado == "Activo" || p.Estado == "Mora"))
+                    .ToListAsync();
+                
+                deudaPendiente = prestamosActivos.Sum(p => p.SaldoPendiente);
+                
+                movimientos = await ctx.Depositos
+                    .Where(d => d.SocioId == socioActual.Id)
+                    .OrderByDescending(d => d.FechaDeposito)
+                    .Take(15)
+                    .ToListAsync();
+            }
+        }
+        loading = false;
     }
 }

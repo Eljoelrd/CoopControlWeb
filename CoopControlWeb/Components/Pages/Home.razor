@@ -1,46 +1,178 @@
 ﻿@page "/"
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore
+@using CoopControlWeb.Modelos
+@rendermode InteractiveServer
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
+@inject IDbContextFactory<AppDBContext> DbFactory
 
-<PageTitle>Inicio</PageTitle>
+<PageTitle>Inicio - CoopControl</PageTitle>
 
-<RadzenCard>
-    <h2>¡Bienvenido a CoopControl!</h2>
-    <p>Sistema de gestión para cooperativas</p>
+<RadzenStack Gap="2rem" Class="rz-p-4 rz-p-md-8">
+    
+    @* HEADER DE BIENVENIDA *@
+    <RadzenRow AlignItems="AlignItems.Center">
+        <RadzenColumn Size="12" SizeMD="8">
+            <RadzenText TextStyle="TextStyle.H3" Class="rz-m-0" Style="font-weight: 800; color: var(--rz-primary-dark);">
+                Panel de Inicio
+            </RadzenText>
+            <RadzenText TextStyle="TextStyle.Body1" Class="rz-color-text-secondary">
+                @DateTime.Now.ToString("dddd, dd 'de' MMMM yyyy")
+            </RadzenText>
+        </RadzenColumn>
+        <RadzenColumn Size="12" SizeMD="4" Class="rz-text-align-right">
+            <AuthorizeView>
+                <Authorized>
+                    <RadzenBadge Text="Sesión Activa" BadgeStyle="BadgeStyle.Success" IsPill="true" />
+                </Authorized>
+                <NotAuthorized>
+                    <RadzenButton Text="Iniciar Sesión" Icon="login" ButtonStyle="ButtonStyle.Primary" Click="@(() => NavigationManager.NavigateTo("/login"))" />
+                </NotAuthorized>
+            </AuthorizeView>
+        </RadzenColumn>
+    </RadzenRow>
 
- 
-</RadzenCard>
+    @* HERO SECTION - COMPACTO *@
+    <RadzenCard Variant="Variant.Flat" Style="background: linear-gradient(45deg, #1a4731 0%, #2f855a 100%); border-radius: 20px; overflow: hidden; position: relative;" Class="rz-p-6 rz-p-md-10">
+        <div style="position: absolute; right: -20px; bottom: -20px; opacity: 0.1;">
+            <RadzenIcon Icon="account_balance" Style="font-size: 15rem; color: white;" />
+        </div>
+        <RadzenStack Gap="1rem" Style="position: relative; z-index: 1;">
+            <RadzenText TextStyle="TextStyle.H4" Class="rz-color-white rz-m-0" Style="font-weight: 700;">
+                Bienvenido a la Cooperativa Digital
+            </RadzenText>
+            <RadzenText TextStyle="TextStyle.Subtitle1" Class="rz-color-white" Style="max-width: 600px; opacity: 0.9;">
+                Administra tus finanzas, solicita créditos y consulta tus ahorros en un solo lugar de forma segura y transparente.
+            </RadzenText>
+            <AuthorizeView>
+                <Authorized>
+                    <RadzenText TextStyle="TextStyle.H6" Class="rz-color-white rz-mt-4">
+                        Hola, @context.User.Identity?.Name 👋
+                    </RadzenText>
+                </Authorized>
+            </AuthorizeView>
+        </RadzenStack>
+    </RadzenCard>
 
-<RadzenCard Style="margin-top: 1.5rem;">
-    <h3>Estadísticas Rápidas</h3>
+    @* ACCIONES POR ROL *@
+    <AuthorizeView Roles="Admin, Cajero">
+        <Authorized>
+            <RadzenText TextStyle="TextStyle.H5" Class="rz-mb-2" Style="font-weight: 600;">Accesos Administrativos</RadzenText>
+            <RadzenRow Gap="1.5rem">
+                <RadzenColumn Size="12" SizeMD="4">
+                    <RadzenCard Variant="Variant.Flat" Class="rz-p-6 action-card" @onclick="@(() => NavigationManager.NavigateTo("/socios"))">
+                        <RadzenStack AlignItems="AlignItems.Center" Gap="1rem">
+                            <RadzenIcon Icon="people" Style="font-size: 3rem; color: #2f855a;" />
+                            <RadzenText TextStyle="TextStyle.Subtitle1" Style="font-weight: 700;">Gestión de Socios</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Caption" TextAlign="TextAlign.Center">Registros, perfiles y estados de cuenta.</RadzenText>
+                        </RadzenStack>
+                    </RadzenCard>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="4">
+                    <RadzenCard Variant="Variant.Flat" Class="rz-p-6 action-card" @onclick="@(() => NavigationManager.NavigateTo("/prestamos/solicitudes"))">
+                        <RadzenStack AlignItems="AlignItems.Center" Gap="1rem">
+                            <RadzenIcon Icon="receipt_long" Style="font-size: 3rem; color: #d69e2e;" />
+                            <RadzenText TextStyle="TextStyle.Subtitle1" Style="font-weight: 700;">Solicitudes</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Caption" TextAlign="TextAlign.Center">Aprobación y revisión de créditos.</RadzenText>
+                        </RadzenStack>
+                    </RadzenCard>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeMD="4">
+                    <RadzenCard Variant="Variant.Flat" Class="rz-p-6 action-card" @onclick="@(() => NavigationManager.NavigateTo("/reportes"))">
+                        <RadzenStack AlignItems="AlignItems.Center" Gap="1rem">
+                            <RadzenIcon Icon="bar_chart" Style="font-size: 3rem; color: #3182ce;" />
+                            <RadzenText TextStyle="TextStyle.Subtitle1" Style="font-weight: 700;">Inteligencia</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Caption" TextAlign="TextAlign.Center">Reportes financieros y métricas globales.</RadzenText>
+                        </RadzenStack>
+                    </RadzenCard>
+                </RadzenColumn>
+            </RadzenRow>
+        </Authorized>
+    </AuthorizeView>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
-        <RadzenCard>
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <RadzenIcon Icon="people" Style="font-size: 2rem; color: #667eea;" />
-                <div>
-                    <h4 style="margin: 0;">1,234</h4>
-                    <small style="color: var(--text-secondary);">Total Socios</small>
-                </div>
-            </div>
-        </RadzenCard>
+    <AuthorizeView Roles="Socio">
+        <Authorized>
+            <RadzenText TextStyle="TextStyle.H5" Class="rz-mb-2" Style="font-weight: 600;">Mi Ventanilla Digital</RadzenText>
+            <RadzenRow Gap="1.5rem">
+                <RadzenColumn Size="12" SizeSM="6" SizeLG="3">
+                    <RadzenCard Variant="Variant.Outlined" Class="socio-card" @onclick="@(() => NavigationManager.NavigateTo("/mi-estado"))">
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                            <RadzenIcon Icon="account_balance_wallet" Style="color: #2f855a;" />
+                            <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-m-0">Estado de Cuenta</RadzenText>
+                        </RadzenStack>
+                    </RadzenCard>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeSM="6" SizeLG="3">
+                    <RadzenCard Variant="Variant.Outlined" Class="socio-card" @onclick="@(() => NavigationManager.NavigateTo("/prestamos/solicitar"))">
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                            <RadzenIcon Icon="add_circle" Style="color: #2f855a;" />
+                            <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-m-0">Nuevo Préstamo</RadzenText>
+                        </RadzenStack>
+                    </RadzenCard>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeSM="6" SizeLG="3">
+                    <RadzenCard Variant="Variant.Outlined" Class="socio-card" @onclick="@(() => NavigationManager.NavigateTo("/calculadora"))">
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                            <RadzenIcon Icon="calculate" Style="color: #2f855a;" />
+                            <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-m-0">Calculadora</RadzenText>
+                        </RadzenStack>
+                    </RadzenCard>
+                </RadzenColumn>
+                <RadzenColumn Size="12" SizeSM="6" SizeLG="3">
+                    <RadzenCard Variant="Variant.Outlined" Class="socio-card" @onclick="@(() => NavigationManager.NavigateTo("/mis-aportes"))">
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
+                            <RadzenIcon Icon="savings" Style="color: #2f855a;" />
+                            <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-m-0">Mis Ahorros</RadzenText>
+                        </RadzenStack>
+                    </RadzenCard>
+                </RadzenColumn>
+            </RadzenRow>
+        </Authorized>
+    </AuthorizeView>
 
-        <RadzenCard>
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <RadzenIcon Icon="account_balance" Style="font-size: 2rem; color: #4caf50;" />
-                <div>
-                    <h4 style="margin: 0;">45</h4>
-                    <small style="color: var(--text-secondary);">Cooperativas</small>
-                </div>
-            </div>
-        </RadzenCard>
+    <AuthorizeView>
+        <NotAuthorized>
+            <RadzenCard Variant="Variant.Flat" Style="background: var(--rz-info-lighter); border-left: 4px solid var(--rz-info);">
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
+                    <RadzenIcon Icon="info" Style="color: var(--rz-info);" />
+                    <RadzenText TextStyle="TextStyle.Body2" Class="rz-m-0">
+                        Bienvenido. Por favor <RadzenLink Path="/login" Text="inicie sesión" /> para acceder a su información financiera.
+                    </RadzenText>
+                </RadzenStack>
+            </RadzenCard>
+        </NotAuthorized>
+    </AuthorizeView>
 
-        <RadzenCard>
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <RadzenIcon Icon="attach_money" Style="font-size: 2rem; color: #ffc107;" />
-                <div>
-                    <h4 style="margin: 0;">$2.5M</h4>
-                    <small style="color: var(--text-secondary);">Capital Social</small>
-                </div>
-            </div>
-        </RadzenCard>
-    </div>
-</RadzenCard>
+</RadzenStack>
+
+<style>
+    .action-card {
+        transition: all 0.3s ease;
+        border-radius: 16px;
+        background-color: var(--rz-base-background-color);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        border: 1px solid var(--rz-base-200);
+    }
+    .action-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        border-color: var(--rz-primary);
+    }
+    .socio-card {
+        cursor: pointer;
+        transition: background 0.2s;
+        border-radius: 12px;
+    }
+    .socio-card:hover {
+        background-color: var(--rz-base-100);
+    }
+</style>
+
+@code {
+    // Podríamos cargar noticias o anuncios aquí en el futuro
+    protected override void OnInitialized()
+    {
+    }
+}
