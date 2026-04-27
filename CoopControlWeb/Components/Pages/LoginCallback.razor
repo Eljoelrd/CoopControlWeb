@@ -1,0 +1,36 @@
+@page "/login-callback"
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using CoopControlWeb.Components.Middleware
+@inject NavigationManager nav
+
+@code {
+    [CascadingParameter]
+    public HttpContext HttpContext { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Extraemos la query de la URL actual
+        var uri = nav.ToAbsoluteUri(nav.Uri);
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+
+        if (query.TryGetValue("key", out var keyStr) && Guid.TryParse(keyStr, out var key))
+        {
+            // Buscamos el principal de usuario guardado en el diccionario temporal del Middleware
+            if (AuthMiddleware.Logins.TryGetValue(key, out var principal))
+            {
+                // Realizamos el proceso de Login en las cookies de ASP.NET Core
+                await HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme, 
+                    principal,
+                    new AuthenticationProperties { IsPersistent = true });
+
+                // Limpiamos el diccionario para liberar memoria
+                AuthMiddleware.Logins.Remove(key, out _);
+            }
+        }
+
+        // Redirigimos al Home con una recarga completa para refrescar el estado de autenticación
+        nav.NavigateTo("/", true);
+    }
+}
