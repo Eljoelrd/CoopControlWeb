@@ -2,10 +2,13 @@
 @rendermode InteractiveServer
 @attribute [Authorize(Roles = "Admin, Cajero")]
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.EntityFrameworkCore
 @using CoopControlWeb.Modelos
+@using System.Security.Claims
 @inject IDbContextFactory<AppDBContext> DbFactory
 @inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Certificados - CoopControl</PageTitle>
 
@@ -13,73 +16,209 @@
     <RadzenRow AlignItems="AlignItems.Center">
         <RadzenColumn Size="12" SizeMD="6">
             <RadzenText TextStyle="TextStyle.H4" Class="rz-m-0">Gestión de Certificados</RadzenText>
-            <RadzenText TextStyle="TextStyle.Caption">Control de certificados de depósito a plazo y aportaciones</RadzenText>
+            <RadzenText TextStyle="TextStyle.Caption">Control de certificados generados a partir de préstamos</RadzenText>
         </RadzenColumn>
         <RadzenColumn Size="12" SizeMD="6" Class="rz-text-align-right">
-            <RadzenButton Text="Emitir Nuevo" Icon="add_circle" ButtonStyle="ButtonStyle.Primary" 
+            <RadzenButton Text="Emitir Nuevo" Icon="add_circle" ButtonStyle="ButtonStyle.Primary"
                           Click="@(() => NavigationManager.NavigateTo("/certificados/nuevo"))" />
         </RadzenColumn>
     </RadzenRow>
 
-    <RadzenDataGrid Data="@certificados" TItem="Certificado" AllowPaging="true" PageSize="10" 
-                    AllowSorting="true" AllowFiltering="true" FilterMode="FilterMode.Simple" Responsive="true"
-                    EmptyText="No se encontraron certificados registrados.">
-        <Columns>
-            <RadzenDataGridColumn TItem="Certificado" Property="Socio.Nombre" Title="Socio">
-                <Template Context="c">
-                    @c.Socio?.Nombre @c.Socio?.Apellido
-                </Template>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="Certificado" Property="Tipo" Title="Tipo" Width="180px" />
-            <RadzenDataGridColumn TItem="Certificado" Property="Monto" Title="Monto" Width="150px">
-                <Template Context="c">
-                    <span style="font-weight: bold; color: var(--rz-primary);">
-                        RD$ @c.Monto.ToString("N2")
-                    </span>
-                </Template>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="Certificado" Property="FechaEmision" Title="Emisión" FormatString="{0:dd/MM/yyyy}" Width="120px" />
-            <RadzenDataGridColumn TItem="Certificado" Property="FechaVencimiento" Title="Vencimiento" FormatString="{0:dd/MM/yyyy}" Width="120px" />
-            <RadzenDataGridColumn TItem="Certificado" Title="Estado" TextAlign="TextAlign.Center" Width="130px">
-                <Template Context="c">
-                    <RadzenBadge BadgeStyle="@GetBadgeStyle(c.Estado)" Text="@c.Estado" Variant="Variant.Flat" />
-                </Template>
-            </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="Certificado" Title="Acciones" TextAlign="TextAlign.Center" Width="150px" Filterable="false" Sortable="false">
-                <Template Context="c">
-                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Center" Gap="0.5rem">
-                        <RadzenButton Icon="visibility" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Tooltip="Ver Detalles"
-                                      Click="@(() => NavigationManager.NavigateTo($"/certificados/detalles/{c.Id}"))" />
-                        <RadzenButton Icon="print" ButtonStyle="ButtonStyle.Secondary" Size="ButtonSize.Small" Tooltip="Imprimir Certificado" />
-                    </RadzenStack>
-                </Template>
-            </RadzenDataGridColumn>
-        </Columns>
-    </RadzenDataGrid>
+    @if (selectedSocioId.HasValue)
+    {
+        <RadzenRow>
+            <RadzenColumn Size="12" Class="rz-text-align-left">
+                <RadzenBadge Text="Filtro: " BadgeStyle="BadgeStyle.Info" />
+                <span class="rz-ml-2"><b>@selectedSocioName</b></span>
+                <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Class="rz-ms-3"
+                              Click="@ClearSocioFilter" Text="Limpiar filtro" />
+            </RadzenColumn>
+        </RadzenRow>
+    }
+
+    @if (isLoading)
+    {
+        <div>Cargando certificados...</div>
+    }
+    else if (!string.IsNullOrEmpty(error))
+    {
+        <RadzenAlert Title="Error" AlertStyle="AlertStyle.Danger" Variant="Variant.Flat" ShowIcon="true">
+            @error
+        </RadzenAlert>
+    }
+    else
+    {
+        <RadzenDataGrid Data="@certificados" TItem="Certificado" AllowPaging="true" PageSize="10"
+                        AllowSorting="true" AllowFiltering="true" FilterMode="FilterMode.Simple" Responsive="true"
+                        EmptyText="No se encontraron certificados generados desde préstamos.">
+            <Columns>
+                <RadzenDataGridColumn TItem="Certificado" Title="Socio">
+                    <Template Context="c">
+                        <RadzenButton ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small"
+                                      Click="@(() => MostrarCertificadosSocio(c.SocioId, $"{c.Socio?.Nombre} {c.Socio?.Apellido}"))">
+                            @c.Socio?.Nombre @c.Socio?.Apellido
+                        </RadzenButton>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="Certificado" Property="Tipo" Title="Tipo" Width="180px" />
+                <RadzenDataGridColumn TItem="Certificado" Property="Monto" Title="Monto" Width="150px">
+                    <Template Context="c">
+                        <span style="font-weight: bold; color: var(--rz-primary);">
+                            RD$ @c.Monto.ToString("N2")
+                        </span>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="Certificado" Property="FechaEmision" Title="Emisión" FormatString="{0:dd/MM/yyyy}" Width="120px" />
+                <RadzenDataGridColumn TItem="Certificado" Property="FechaVencimiento" Title="Vencimiento" FormatString="{0:dd/MM/yyyy}" Width="120px" />
+                <RadzenDataGridColumn TItem="Certificado" Title="Estado" TextAlign="TextAlign.Center" Width="130px">
+                    <Template Context="c">
+                        <RadzenBadge BadgeStyle="@GetBadgeStyle(c.Estado)" Text="@c.Estado" Variant="Variant.Flat" />
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="Certificado" Title="Acciones" TextAlign="TextAlign.Center" Width="150px" Filterable="false" Sortable="false">
+                    <Template Context="c">
+                        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Center" Gap="0.5rem">
+                            <RadzenButton Icon="visibility" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Tooltip="Ver Detalles"
+                                          Click="@(() => NavigationManager.NavigateTo($"/mis-prestamos/certificado/{c.Id}"))" />
+                            <RadzenButton Icon="print" ButtonStyle="ButtonStyle.Secondary" Size="ButtonSize.Small" Tooltip="Imprimir Certificado" />
+                        </RadzenStack>
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+    }
 </RadzenStack>
 
 @code {
     private List<Certificado> certificados = new();
+    private List<Certificado> allCertificados = new();
+    private ClaimsPrincipal? user;
+    private bool isAdmin;
+    private string? error;
+    private bool isLoading = true;
+
+    private int? selectedSocioId;
+    private string? selectedSocioName;
 
     protected override async Task OnInitializedAsync()
     {
-        await CargarCertificados();
+        try
+        {
+            var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            user = auth.User;
+            isAdmin = DetectarAdmin(user);
+            await CargarCertificadosDesdePrestamos();
+        }
+        catch (Exception ex)
+        {
+            error = "Error inicializando certificados: " + ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
-    private async Task CargarCertificados()
+    private async Task CargarCertificadosDesdePrestamos()
     {
         using var context = DbFactory.CreateDbContext();
-        try 
+        try
         {
-            certificados = await context.Set<Certificado>()
-                .Include(c => c.Socio)
-                .OrderByDescending(c => c.FechaEmision)
-                .ToListAsync();
+            IQueryable<Prestamo> query = context.Set<Prestamo>()
+                                             .AsNoTracking()
+                                             .Include(p => p.Socio)
+                                             .Include(p => p.PrestamoPagos);
+
+            if (!isAdmin)
+            {
+                var email = user?.FindFirst("email")?.Value ?? user?.Identity?.Name;
+                if (string.IsNullOrEmpty(email))
+                {
+                    allCertificados = new List<Certificado>();
+                    certificados = allCertificados;
+                    return;
+                }
+
+                var socio = await context.Socios.AsNoTracking().FirstOrDefaultAsync(s => s.Email == email || s.Cedula == email);
+                if (socio == null)
+                {
+                    allCertificados = new List<Certificado>();
+                    certificados = allCertificados;
+                    return;
+                }
+
+                query = query.Where(p => p.SocioId == socio.Id);
+            }
+
+            var prestamos = await query.OrderByDescending(p => p.FechaPrestamo).ToListAsync();
+
+            allCertificados = prestamos.Select(p =>
+            {
+                DateTime fechaVenc = p.PlazoMeses.HasValue ? p.FechaPrestamo.AddMonths(p.PlazoMeses.Value) : p.FechaPrestamo;
+                string estado = !string.IsNullOrEmpty(p.Estado)
+                    ? p.Estado
+                    : (fechaVenc < DateTime.Today ? "Vencido" : "Activo");
+
+                return new Certificado
+                {
+                    Id = p.Id,
+                    SocioId = p.SocioId,
+                    Socio = p.Socio,
+                    Tipo = p.TipoPrestamo ?? "Préstamo",
+                    Monto = p.Monto,
+                    FechaEmision = p.FechaPrestamo,
+                    FechaVencimiento = fechaVenc,
+                    Estado = estado,
+                    Observaciones = $"Generado desde préstamo #{p.Id}"
+                };
+            }).ToList();
+
+            certificados = allCertificados;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            certificados = new List<Certificado>();
+            allCertificados = new List<Certificado>();
+            certificados = allCertificados;
+            error = "Error cargando certificados desde préstamos: " + (ex.InnerException?.Message ?? ex.Message);
+            Console.Error.WriteLine(ex);
         }
+    }
+
+    private void MostrarCertificadosSocio(int socioId, string? nombre)
+    {
+        selectedSocioId = socioId;
+        selectedSocioName = nombre;
+        certificados = allCertificados.Where(c => c.SocioId == socioId).ToList();
+    }
+
+    private void ClearSocioFilter()
+    {
+        selectedSocioId = null;
+        selectedSocioName = null;
+        certificados = allCertificados;
+    }
+
+    private static bool DetectarAdmin(ClaimsPrincipal? user)
+    {
+        if (user == null) return false;
+
+        var roleClaims = user.Claims
+            .Where(c => c.Type?.IndexOf("role", StringComparison.OrdinalIgnoreCase) >= 0)
+            .Select(c => c.Value ?? string.Empty);
+
+        if (roleClaims.Any(r => r.IndexOf("admin", StringComparison.OrdinalIgnoreCase) >= 0
+                              || r.IndexOf("administrador", StringComparison.OrdinalIgnoreCase) >= 0))
+        {
+            return true;
+        }
+
+        if (user.Claims.Any(c => (c.Value ?? string.Empty).IndexOf("admin", StringComparison.OrdinalIgnoreCase) >= 0
+                             || (c.Value ?? string.Empty).IndexOf("administrador", StringComparison.OrdinalIgnoreCase) >= 0))
+        {
+            return true;
+        }
+
+        return false;
     }
 
     private BadgeStyle GetBadgeStyle(string? estado) => estado switch
