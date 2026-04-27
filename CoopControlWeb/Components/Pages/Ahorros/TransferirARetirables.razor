@@ -7,62 +7,112 @@
 
 <PageTitle>Transferir a Ahorro Retirable</PageTitle>
 
-<div class="rz-p-6 rz-p-md-10">
-    <RadzenCard>
-        <RadzenStack Gap="1rem">
-            <RadzenText TextStyle="TextStyle.H5">Transferir a Ahorro Retirable</RadzenText>
-            <RadzenText TextStyle="TextStyle.Body2" Class="rz-color-text-secondary">
-                Mueva fondos desde el ahorro normal del socio hacia su cuenta retirable.
+<div class="rz-display-flex rz-align-items-center rz-justify-content-center rz-p-4 rz-p-md-12" style="min-height: 75vh; width: 100%;">
+    <RadzenCard class="rz-shadow-10 rz-border-radius-6 rz-p-0" Style="width: 100%; max-width: 800px; overflow: hidden; background-color: var(--rz-panel-background-color);">
+        
+        @* HEADER CON GRADIENTE ESTILO COOPCONTROL *@
+        <div class="rz-p-8 rz-text-align-center" style="background: linear-gradient(135deg, #2f855a 0%, #276749 100%); color: white;">
+            <RadzenIcon Icon="swap_horiz" Style="font-size: 4rem; margin-bottom: 1rem; opacity: 0.9;" />
+            <RadzenText TextStyle="TextStyle.H4" Style="font-weight: 800; margin: 0; color: white;">Transferencia Interna</RadzenText>
+            <RadzenText TextStyle="TextStyle.Subtitle1" Style="color: rgba(255,255,255,0.8); margin-top: 0.5rem;">
+                Mover fondos a la cuenta de Ahorros Retirables
             </RadzenText>
+        </div>
 
-            <RadzenRow>
-                <RadzenColumn Size="12" SizeMD="6">
-                    <RadzenFormField Text="Socio" Variant="Variant.Outlined">
+        <div class="rz-p-8 rz-p-md-12">
+            <RadzenStack Gap="2rem">
+                @* SELECCIÓN DE SOCIO *@
+                <RadzenFormField Text="Seleccione el Socio" Variant="Variant.Outlined" Style="width: 100%;">
+                    <Start>
+                        <RadzenIcon Icon="person" />
+                    </Start>
+                    <ChildContent>
                         <RadzenDropDown @bind-Value="selectedSocioId"
                                         Data="@socios"
                                         TextProperty="NombreCompleto"
                                         ValueProperty="Id"
                                         AllowFiltering="true"
-                                        Change="@(async (object? v) => await OnSocioChanged((int?)v))" />
-                    </RadzenFormField>
-                </RadzenColumn>
+                                        FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                                        Placeholder="Buscar socio por nombre o cédula..."
+                                        Change="@(async (object? v) => await OnSocioChanged((int?)v))" 
+                                        Style="width: 100%;" />
+                    </ChildContent>
+                </RadzenFormField>
 
-                <RadzenColumn Size="12" SizeMD="6">
-                    <RadzenFormField Text="Ahorro Origen" Variant="Variant.Outlined">
-                        <RadzenDropDown @bind-Value="selectedAhorroOrigenId"
-                                        Data="@ahorrosOrigen"
-                                        TextProperty="Descripcion"
-                                        ValueProperty="Id"
-                                        Placeholder="Seleccione ahorro origen..." />
-                    </RadzenFormField>
-                </RadzenColumn>
-            </RadzenRow>
+                @if (selectedSocioId > 0)
+                {
+                    <RadzenRow Gap="1.5rem">
+                        <RadzenColumn Size="12" SizeMD="6">
+                            <RadzenFormField Text="Cuenta de Origen" Variant="Variant.Outlined" Style="width: 100%;">
+                                <Start>
+                                    <RadzenIcon Icon="account_balance_wallet" />
+                                </Start>
+                                <ChildContent>
+                                    <RadzenDropDown @bind-Value="selectedAhorroOrigenId"
+                                                    Data="@ahorrosOrigen"
+                                                    TextProperty="Descripcion"
+                                                    ValueProperty="Id"
+                                                    Placeholder="Seleccione ahorro..." 
+                                                    Style="width: 100%;" />
+                                </ChildContent>
+                            </RadzenFormField>
+                        </RadzenColumn>
 
-            <RadzenRow>
-                <RadzenColumn Size="12" SizeMD="6">
-                    <RadzenFormField Text="Monto" Variant="Variant.Outlined">
-                        <!-- CORRECCI�N: quitar sufijo 'm' de los atributos -->
-                        <RadzenNumeric @bind-Value="monto" Min="0.01m" Step="0.01m" Format="c" />
-                    </RadzenFormField>
-                </RadzenColumn>
+                        <RadzenColumn Size="12" SizeMD="6">
+                            <RadzenFormField Text="Monto a Mover" Variant="Variant.Outlined" Style="width: 100%;">
+                                <Start>
+                                    <RadzenIcon Icon="attach_money" />
+                                </Start>
+                                <ChildContent>
+                                    <RadzenNumeric @bind-Value="monto" Min="@(0.01m)" Format="c" Style="width: 100%;" />
+                                </ChildContent>
+                            </RadzenFormField>
+                        </RadzenColumn>
+                    </RadzenRow>
 
-                <RadzenColumn Size="12" SizeMD="6">
-                    <RadzenFormField Text="Observaciones" Variant="Variant.Outlined">
-                        <RadzenTextBox @bind-Value="observaciones" />
+                    <RadzenFormField Text="Observaciones (Opcional)" Variant="Variant.Outlined" Style="width: 100%;">
+                        <Start>
+                            <RadzenIcon Icon="note_add" />
+                        </Start>
+                        <ChildContent>
+                            <RadzenTextBox @bind-Value="observaciones" Style="width: 100%;" Placeholder="Notas adicionales..." />
+                        </ChildContent>
                     </RadzenFormField>
-                </RadzenColumn>
-            </RadzenRow>
 
-            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
-                <RadzenButton Text="Cancelar" ButtonStyle="ButtonStyle.Light" Click="@(() => NavigationManager.NavigateTo("/"))" Disabled="@isProcessing" />
-                <RadzenButton Text="Transferir" ButtonStyle="ButtonStyle.Info" Click="@(async () => await EjecutarTransferencia())" Disabled="@isProcessing" />
+                    @if (!string.IsNullOrEmpty(error))
+                    {
+                        <RadzenAlert AlertStyle="AlertStyle.Danger" Variant="Variant.Flat" Shade="Shade.Lighter" class="rz-m-0">
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                <RadzenIcon Icon="error_outline" />
+                                <RadzenText TextStyle="TextStyle.Body2">@error</RadzenText>
+                            </RadzenStack>
+                        </RadzenAlert>
+                    }
+
+                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem" class="rz-mt-6">
+                        <RadzenButton Text="Cancelar" Icon="cancel" ButtonStyle="ButtonStyle.Light" 
+                                      Click="@(() => NavigationManager.NavigateTo("/"))" Disabled="@isProcessing"
+                                      Style="border-radius: 20px; padding: 0 1.5rem;" />
+                        
+                        <RadzenButton Text="Confirmar Transferencia" Icon="check_circle" ButtonStyle="ButtonStyle.Primary" 
+                                      Click="@(async () => await EjecutarTransferencia())" IsBusy="@isProcessing" 
+                                      Disabled="@(selectedAhorroOrigenId == 0 || monto <= 0)" 
+                                      Style="border-radius: 20px; padding: 0 2rem; background-color: #2f855a;" />
+                    </RadzenStack>
+                }
+                else
+                {
+                    @* Estado vacío sugerente para invitar a buscar socio *@
+                    <div class="rz-p-12 rz-text-align-center rz-border-radius-4" 
+                         style="border: 2px dashed var(--rz-base-300); background-color: var(--rz-base-100); opacity: 0.7;">
+                        <RadzenIcon Icon="person_search" Style="font-size: 4rem; color: var(--rz-base-400);" />
+                        <RadzenText TextStyle="TextStyle.Body1" class="rz-mt-4 rz-color-text-secondary">
+                            Por favor, seleccione un socio para cargar sus cuentas disponibles.
+                        </RadzenText>
+                    </div>
+                }
             </RadzenStack>
-
-            @if (!string.IsNullOrEmpty(error))
-            {
-                <div class="rz-mt-3 rz-color-danger">@error</div>
-            }
-        </RadzenStack>
+        </div>
     </RadzenCard>
 </div>
 
@@ -78,11 +128,11 @@
 
     protected override async Task OnInitializedAsync()
     {
-        using var ctx = DbFactory.CreateDbContext();
+        await using var ctx = await DbFactory.CreateDbContextAsync();
         socios = await ctx.Socios
             .OrderBy(s => s.Nombre)
             .ThenBy(s => s.Apellido)
-            .Select(s => new SocioDisplay { Id = s.Id, NombreCompleto = $"{s.Nombre} {s.Apellido} - {s.Cedula}" })
+            .Select(s => new SocioDisplay { Id = s.Id, NombreCompleto = $"{s.Nombre} {s.Apellido} ({s.Cedula})" })
             .ToListAsync();
     }
 
@@ -95,7 +145,7 @@
 
     private async Task CargarAhorrosOrigen(int socioId)
     {
-        using var ctx = DbFactory.CreateDbContext();
+        await using var ctx = await DbFactory.CreateDbContextAsync();
 
         var list = await ctx.Ahorros
             .Where(a => a.SocioId == socioId)
@@ -131,7 +181,7 @@
 
         try
         {
-            using var ctx = DbFactory.CreateDbContext();
+            await using var ctx = await DbFactory.CreateDbContextAsync();
             await using var tx = await ctx.Database.BeginTransactionAsync();
 
             var ahorroOrigen = await ctx.Ahorros.FirstOrDefaultAsync(a => a.Id == selectedAhorroOrigenId && a.SocioId == selectedSocioId);
