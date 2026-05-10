@@ -6,6 +6,7 @@
 @inject AuthenticationStateProvider AuthProvider
 @inject IDbContextFactory<AppDBContext> DbFactory
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Certificado de Préstamo - CoopControl Web</PageTitle>
 
@@ -85,7 +86,8 @@
                 </RadzenRow>
 
                 <div class="rz-text-align-right rz-mt-8">
-                    <RadzenButton Text="Volver a Mis Préstamos" Icon="arrow_back" ButtonStyle="ButtonStyle.Light" Click="@(() => NavigationManager.NavigateTo("/mis-prestamos"))" />
+                    <RadzenButton Text="Volver" Icon="arrow_back" Variant="Variant.Text"
+                      Click="@GoBack" Style="width: fit-content;" />
                     <RadzenButton Text="Imprimir Certificado (Pronto)" Icon="print" ButtonStyle="ButtonStyle.Secondary" Class="rz-ms-2" Disabled="true" />
                 </div>
             </RadzenStack>
@@ -107,5 +109,10 @@
             .FirstOrDefaultAsync(m => m.Id == Id);
 
         if (prestamo == null) NavigationManager.NavigateTo("/mis-prestamos");
+    }
+
+    private async Task GoBack()
+    {
+        await JSRuntime.InvokeVoidAsync("history.back");
     }
 }
