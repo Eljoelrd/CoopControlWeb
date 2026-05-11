@@ -4,7 +4,10 @@
 @using static System.Runtime.InteropServices.JavaScript.JSType
 @inject IDbContextFactory<AppDBContext> DbFactory
 @inject NavigationManager NavigationManager
-
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Admin, Cajero")]
+@inject AuthenticationStateProvider AuthenticationStateProvider
 <PageTitle>Cuenta de Ahorros del Socio</PageTitle>
 
 <div class="rz-p-6">

@@ -7,6 +7,10 @@
 @inject AuthenticationStateProvider AuthProvider
 @inject IDbContextFactory<AppDBContext> DbFactory
 @inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Socio")]
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Solicitar Préstamo - CoopControl Web</PageTitle>
 

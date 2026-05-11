@@ -4,7 +4,10 @@
 @using Microsoft.EntityFrameworkCore
 @inject IDbContextFactory<AppDBContext> DbFactory
 @inject NavigationManager NavigationManager
-
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Admin")]
+@inject AuthenticationStateProvider AuthenticationStateProvider
 <PageTitle>Editar Socio</PageTitle>
 
 <div class="rz-p-0 rz-p-md-12">

@@ -5,6 +5,10 @@
 @using CoopControlWeb.Modelos
 @inject IDbContextFactory<AppDBContext> DbFactory
 @inject IJSRuntime JS
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Admin, Cajero")]
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Prototipo - Gestión de Aportes</PageTitle>
 
