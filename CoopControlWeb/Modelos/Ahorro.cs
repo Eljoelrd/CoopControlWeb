@@ -40,26 +40,37 @@ namespace CoopControlWeb.Modelos
         // Para plazos o vencimientos (si aplica)
         public DateTime? FechaCreacion { get; set; } = DateTime.Now;
         public DateTime? FechaVencimiento { get; set; }
+        public DateTime FechaUltimoCalculoInteres { get; set; } = DateTime.Now;
         public string? Notas { get; set; }
 
         // Retiro o reglas especiales - no mapeadas
         [NotMapped]
         public decimal InteresEstimadoAnual => Math.Round(Saldo * (TasaInteresAnual / 100m), 2);
 
+        // Nuevo: InterÃ©s ganado basado en el tiempo transcurrido (proporcional mensual)
         [NotMapped]
-        public decimal DisponibleConInteres => Saldo + InteresEstimadoAnual;
+        public decimal InteresGanadoAcumulado {
+            get {
+                var mesesTranscurridos = ((DateTime.Now.Year - FechaUltimoCalculoInteres.Year) * 12) + DateTime.Now.Month - FechaUltimoCalculoInteres.Month;
+                if (mesesTranscurridos <= 0) return 0;
+                return Math.Round(Saldo * (TasaInteresAnual / 100m / 12m) * mesesTranscurridos, 2);
+            }
+        }
 
-        // Helper para obtener la tasa por defecto según el tipo de ahorro
+        [NotMapped]
+        public decimal DisponibleConInteres => Saldo + InteresGanadoAcumulado;
+
+        // Helper para obtener la tasa por defecto segÃºn el tipo de ahorro
         public static decimal GetDefaultTasaInteres(TipoAhorro tipo)
         {
             return tipo switch
             {
-                TipoAhorro.Normal => 0m,            // Ahorro capital (distribución según asamblea)
+                TipoAhorro.Normal => 0m,            // Ahorro capital (distribuciÃ³n segÃºn asamblea)
                 TipoAhorro.Especial => 6m,         // 6% anual
                 TipoAhorro.Navideno => 7m,         // 7% anual
                 TipoAhorro.Escolar => 5m,          // 5% anual
                 TipoAhorro.Infantil => 5m,         // 5% anual
-                TipoAhorro.ClubViajes => 0m,       // Sin interés por defecto
+                TipoAhorro.ClubViajes => 0m,       // Sin interï¿½s por defecto
                 TipoAhorro.InversionCapital => 8m, // 8% anual por defecto para inversiones
                 _ => 0m,
             };

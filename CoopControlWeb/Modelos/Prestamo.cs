@@ -49,9 +49,11 @@ public class Prestamo
     public DateTime? FechaModificacion { get; set; }
 
     [NotMapped]
-    public decimal? TotalConInteres => TasaInteres.HasValue
-        ? Monto + (Monto * TasaInteres.Value / 100)
-        : Monto;
+    public decimal? TotalConInteres => (TasaInteres.HasValue && PlazoMeses.HasValue)
+        ? Monto + (Monto * (TasaInteres.Value / 100) * (PlazoMeses.Value / 12m))
+        : (TasaInteres.HasValue 
+            ? Monto + (Monto * TasaInteres.Value / 100) 
+            : Monto);
 
     [NotMapped]
     public decimal? CuotaMensual => (TotalConInteres.HasValue && PlazoMeses.HasValue && PlazoMeses.Value > 0)
