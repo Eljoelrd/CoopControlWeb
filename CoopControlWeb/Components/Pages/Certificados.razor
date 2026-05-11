@@ -93,7 +93,7 @@
     private List<Certificado> certificados = new();
     private List<Certificado> allCertificados = new();
     private ClaimsPrincipal? user;
-    private bool isAdmin;
+    private bool esPersonal;
     private string? error;
     private bool isLoading = true;
 
@@ -106,7 +106,7 @@
         {
             var auth = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             user = auth.User;
-            isAdmin = DetectarAdmin(user);
+            esPersonal = EsPersonalAutorizado(user);
             await CargarCertificadosDesdePrestamos();
         }
         catch (Exception ex)
@@ -129,7 +129,7 @@
                                              .Include(p => p.Socio)
                                              .Include(p => p.PrestamoPagos);
 
-            if (!isAdmin)
+            if (!esPersonal)
             {
                 var email = user?.FindFirst("email")?.Value ?? user?.Identity?.Name;
                 if (string.IsNullOrEmpty(email))
@@ -198,27 +198,11 @@
         certificados = allCertificados;
     }
 
-    private static bool DetectarAdmin(ClaimsPrincipal? user)
+    private static bool EsPersonalAutorizado(ClaimsPrincipal? user)
     {
         if (user == null) return false;
-
-        var roleClaims = user.Claims
-            .Where(c => c.Type?.IndexOf("role", StringComparison.OrdinalIgnoreCase) >= 0)
-            .Select(c => c.Value ?? string.Empty);
-
-        if (roleClaims.Any(r => r.IndexOf("admin", StringComparison.OrdinalIgnoreCase) >= 0
-                              || r.IndexOf("administrador", StringComparison.OrdinalIgnoreCase) >= 0))
-        {
-            return true;
-        }
-
-        if (user.Claims.Any(c => (c.Value ?? string.Empty).IndexOf("admin", StringComparison.OrdinalIgnoreCase) >= 0
-                             || (c.Value ?? string.Empty).IndexOf("administrador", StringComparison.OrdinalIgnoreCase) >= 0))
-        {
-            return true;
-        }
-
-        return false;
+        
+        return user.IsInRole("Admin") || user.IsInRole("Cajero") || user.IsInRole("Administrador");
     }
 
     private BadgeStyle GetBadgeStyle(string? estado) => estado switch
