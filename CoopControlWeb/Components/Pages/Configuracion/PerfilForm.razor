@@ -69,7 +69,7 @@
         var state = await AuthProvider.GetAuthenticationStateAsync();
         user = state.User;
 
-        if (user.Identity is not null && user.Identity.IsAuthenticated)
+        if (user.Identity is not null && user.Identity.IsAuthenticated && !string.IsNullOrEmpty(user.Identity.Name))
         {
             var dbUser = userService.GetByEmail(user.Identity.Name);
             if (dbUser != null)
