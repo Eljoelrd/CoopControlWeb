@@ -28,7 +28,7 @@
 
                         <RadzenStack Gap="1.5rem">
                             <RadzenFormField Text="Tipo de Préstamo" Variant="Variant.Outlined" Style="width: 100%;">
-                                <RadzenDropDown @bind-Value="solicitud.TipoPrestamo" Data="@(new[] { "Personal", "Comercial", "Vivienda" })" Placeholder="Seleccione..." Name="TipoPrestamo" />
+                                <RadzenDropDown @bind-Value="solicitud.TipoPrestamo" Data="@(new[] { "Personal", "Comercial", "Vivienda" })" Placeholder="Seleccione..." Name="TipoPrestamo" Change="@CalcularCuota" />
                             </RadzenFormField>
                             <RadzenRequiredValidator Component="TipoPrestamo" Text="Seleccione el tipo" />
 
@@ -98,11 +98,33 @@
             if (socio != null) socioId = socio.Id;
             else statusMessage = "Error crítico: El usuario logueado no está registrado como Socio de la cooperativa.";
         }
+
+        // Procesar parámetros de la calculadora si existen en la URL
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        
+        if (query.TryGetValue("monto", out var mVal)) 
+            solicitud.Monto = decimal.TryParse(mVal, out var m) ? m : solicitud.Monto;
+        
+        if (query.TryGetValue("plazo", out var pVal)) 
+            solicitud.PlazoMeses = int.TryParse(pVal, out var p) ? p : solicitud.PlazoMeses;
+            
+        if (query.TryGetValue("tipo", out var tVal)) 
+            solicitud.TipoPrestamo = tVal;
+
+        CalcularCuota();
     }
 
     private void CalcularCuota()
     {
-        // Forzar el recálculo llamando a StateHasChanged o simplemente actualizando el modelo.
+        // Actualizar tasa según el tipo de préstamo seleccionado para mayor realismo
+        solicitud.TasaInteres = solicitud.TipoPrestamo switch
+        {
+            "Vivienda" => 8.5m,
+            "Comercial" => 10.0m,
+            _ => 12.0m
+        };
+
         StateHasChanged();
     }
 

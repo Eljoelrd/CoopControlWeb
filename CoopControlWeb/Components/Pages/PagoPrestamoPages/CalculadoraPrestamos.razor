@@ -1,58 +1,79 @@
 ﻿@page "/calculadora"
+@using CoopControlWeb.Modelos
+@inject NavigationManager NavigationManager
 
-<RadzenRow JustifyContent="JustifyContent.Center" Class="rz-p-6">
-    <RadzenColumn Size="12" SizeMD="6">
-        <RadzenCard Class="rz-shadow-10">
-            <RadzenText TextStyle="TextStyle.H5" Class="rz-mb-4">Calculadora de Cuotas</RadzenText>
+<PageTitle>Calculadora de Préstamos - CoopControl Web</PageTitle>
 
-            <RadzenStack Gap="1rem">
-                <RadzenFormField Text="Monto del Préstamo (RD$)" Style="width: 100%;">
-                    <RadzenNumeric @bind-Value="monto" TValue="decimal" Change="@Calcular" />
-                </RadzenFormField>
+<div class="rz-p-0 rz-p-md-12">
+    <RadzenRow JustifyContent="JustifyContent.Center">
+        <RadzenColumn Size="12" SizeMD="8" SizeLG="6">
+            <RadzenCard Class="rz-shadow-10 rz-border-radius-2 rz-p-0">
+                <div style="background-color: var(--rz-primary); height: 10px; width: 100%;"></div>
+                
+                <div class="rz-p-6 rz-p-md-10">
+                    <RadzenStack Gap="0.5rem" Class="rz-mb-6">
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                            <RadzenIcon Icon="calculate" Style="color: var(--rz-primary); font-size: 2rem;" />
+                            <RadzenText TextStyle="TextStyle.H4" TagName="TagName.H1" Class="rz-m-0">Calculadora de Cuotas</RadzenText>
+                        </RadzenStack>
+                        <RadzenText TextStyle="TextStyle.Body2" Class="rz-color-text-secondary">Estime sus cuotas mensuales según el tipo de préstamo y el plazo deseado.</RadzenText>
+                    </RadzenStack>
 
-                <RadzenFormField Text="Tasa de Interés Anual (%)" Style="width: 100%;">
-                    <RadzenNumeric @bind-Value="tasaAnual" TValue="double" Change="@Calcular" />
-                </RadzenFormField>
+                    <RadzenStack Gap="1.5rem">
+                        <RadzenFormField Text="Tipo de Préstamo" Variant="Variant.Outlined" Style="width: 100%;">
+                            <RadzenDropDown @bind-Value="simulacion.TipoPrestamo" Data="@(new[] { "Personal", "Comercial", "Vivienda" })" Change="@ActualizarTasa" />
+                        </RadzenFormField>
 
-                <RadzenFormField Text="Plazo (Meses)" Style="width: 100%;">
-                    <RadzenNumeric @bind-Value="meses" TValue="int" Change="@Calcular" />
-                </RadzenFormField>
+                        <RadzenRow>
+                            <RadzenColumn Size="12" SizeMD="6">
+                                <RadzenFormField Text="Monto (RD$)" Variant="Variant.Outlined" Style="width: 100%;">
+                                    <RadzenNumeric @bind-Value="simulacion.Monto" TValue="decimal" Format="N2" Change="@(() => StateHasChanged())" />
+                                </RadzenFormField>
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeMD="6">
+                                <RadzenFormField Text="Plazo (Meses)" Variant="Variant.Outlined" Style="width: 100%;">
+                                    <RadzenNumeric @bind-Value="simulacion.PlazoMeses" TValue="int?" Min="1" Change="@(() => StateHasChanged())" />
+                                </RadzenFormField>
+                            </RadzenColumn>
+                        </RadzenRow>
 
-                <RadzenAlert AlertStyle="AlertStyle.Info" Variant="Variant.Flat" Shade="Shade.Lighter" ShowIcon="false" Class="rz-mt-4">
-                    <RadzenRow>
-                        <RadzenColumn Size="6">
-                            <RadzenText TextStyle="TextStyle.Overline">Cuota Mensual</RadzenText>
-                            <RadzenText TextStyle="TextStyle.H4">RD$ @cuota.ToString("N2")</RadzenText>
-                        </RadzenColumn>
-                        <RadzenColumn Size="6">
-                            <RadzenText TextStyle="TextStyle.Overline">Total Intereses</RadzenText>
-                            <RadzenText TextStyle="TextStyle.Subtitle1">RD$ @totalInteres.ToString("N2")</RadzenText>
-                        </RadzenColumn>
-                    </RadzenRow>
-                </RadzenAlert>
-            </RadzenStack>
-        </RadzenCard>
-    </RadzenColumn>
-</RadzenRow>
+                        <RadzenAlert Title="Simulación de Cuotas" AlertStyle="AlertStyle.Info" Variant="Variant.Flat" Shade="Shade.Lighter" ShowIcon="true">
+                            <RadzenRow>
+                                <RadzenColumn Size="6">
+                                    <RadzenText TextStyle="TextStyle.Subtitle2">Cuota Mensual</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.H5"><b>RD$ @(simulacion.CuotaMensual?.ToString("N2") ?? "0.00")</b></RadzenText>
+                                </RadzenColumn>
+                                <RadzenColumn Size="6">
+                                    <RadzenText TextStyle="TextStyle.Subtitle2">Tasa Aplicada</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.H6">@simulacion.TasaInteres% anual</RadzenText>
+                                </RadzenColumn>
+                            </RadzenRow>
+                        </RadzenAlert>
+
+                        <RadzenButton Text="Solicitar este Préstamo" Icon="assignment" ButtonStyle="ButtonStyle.Primary" 
+                                      Click="@IrASolicitud" Class="rz-mt-4" Style="border-radius: 25px;" />
+                    </RadzenStack>
+                </div>
+            </RadzenCard>
+        </RadzenColumn>
+    </RadzenRow>
+</div>
 
 @code {
-    private decimal monto = 10000;
-    private double tasaAnual = 12;
-    private int meses = 12;
-    private decimal cuota = 0;
-    private decimal totalInteres = 0;
+    private Prestamo simulacion = new() { Monto = 50000, PlazoMeses = 12, TasaInteres = 12m, TipoPrestamo = "Personal" };
 
-    protected override void OnInitialized() => Calcular();
-
-    private void Calcular()
+    private void ActualizarTasa()
     {
-        if (monto <= 0 || tasaAnual <= 0 || meses <= 0) return;
+        simulacion.TasaInteres = simulacion.TipoPrestamo switch
+        {
+            "Vivienda" => 8.5m,
+            "Comercial" => 10.0m,
+            _ => 12.0m
+        };
+    }
 
-        double tasaMensual = (tasaAnual / 100) / 12;
-        double factor = Math.Pow(1 + tasaMensual, meses);
-        decimal resultadoCuota = monto * (decimal)((tasaMensual * factor) / (factor - 1));
-
-        cuota = resultadoCuota;
-        totalInteres = (cuota * meses) - monto;
+    private void IrASolicitud()
+    {
+        NavigationManager.NavigateTo($"/prestamos/solicitar?monto={simulacion.Monto}&plazo={simulacion.PlazoMeses}&tipo={simulacion.TipoPrestamo}");
     }
 }
