@@ -1,0 +1,119 @@
+@page "/socios/estado/{Id:int}"
+@rendermode InteractiveServer
+@using CoopControlWeb.Modelos
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<AppDBContext> DbFactory
+@inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Admin, Cajero")]
+
+<PageTitle>Estado de Cuenta - CoopControl</PageTitle>
+
+<div class="rz-p-4 rz-p-md-12">
+    <RadzenRow JustifyContent="JustifyContent.Center">
+        <RadzenColumn Size="12" SizeLG="10">
+            @if (model == null)
+            {
+                <RadzenCard Class="rz-shadow-10 rz-p-12 text-center">
+                    <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+                    <RadzenText TextStyle="TextStyle.Body1" Class="rz-mt-4">Generando estado de cuenta...</RadzenText>
+                </RadzenCard>
+            }
+            else
+            {
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Class="rz-mb-6">
+                    <RadzenStack Gap="0">
+                        <RadzenText TextStyle="TextStyle.H4" TagName="TagName.H1" Class="rz-m-0">
+                            <RadzenIcon Icon="account_balance_wallet" /> Estado de Cuenta
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Subtitle1" Class="rz-color-text-secondary">@model.NombreCompleto | Cédula: @model.Cedula</RadzenText>
+                    </RadzenStack>
+                    <RadzenButton Click=@(() => NavigationManager.NavigateTo($"/socios/details?id={Id}"))
+                                  Text="Regresar al Expediente" Icon="arrow_back" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" />
+                </RadzenStack>
+
+                <RadzenRow Gap="2rem" Class="rz-mb-8">
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenCard Variant="Variant.Flat" Class="rz-background-color-primary-lighter rz-p-4">
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1.5rem">
+                                <RadzenIcon Icon="savings" Style="font-size: 3rem; color: var(--rz-primary-dark);" />
+                                <RadzenStack Gap="0">
+                                    <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-m-0">Total Aportes Acumulados</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.H4" Class="rz-m-0" SemiBold="true">RD$ @model.TotalAportes.ToString("N2")</RadzenText>
+                                </RadzenStack>
+                            </RadzenStack>
+                        </RadzenCard>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeMD="6">
+                        <RadzenCard Variant="Variant.Flat" Class="rz-background-color-warning-lighter rz-p-4">
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1.5rem">
+                                <RadzenIcon Icon="payments" Style="font-size: 3rem; color: var(--rz-warning-darker);" />
+                                <RadzenStack Gap="0">
+                                    <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-m-0">Total Capital en Préstamos</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.H4" Class="rz-m-0" SemiBold="true">RD$ @model.TotalPrestamos.ToString("N2")</RadzenText>
+                                </RadzenStack>
+                            </RadzenStack>
+                        </RadzenCard>
+                    </RadzenColumn>
+                </RadzenRow>
+
+                <RadzenTabs RenderMode="TabRenderMode.Client" Class="rz-shadow-2">
+                    <Tabs>
+                        <RadzenTabsItem Text="Historial de Aportes" Icon="history">
+                            <RadzenDataGrid Data="@model.Aportes" TItem="Aporte" AllowPaging="true" PageSize="10" AllowSorting="true" EmptyText="No se encontraron aportes registrados.">
+                                <Columns>
+                                    <RadzenDataGridColumn TItem="Aporte" Property="Id" Title="ID" Width="80px" />
+                                    <RadzenDataGridColumn TItem="Aporte" Property="Tipo" Title="Concepto / Tipo" />
+                                    <RadzenDataGridColumn TItem="Aporte" Property="Monto" Title="Monto" TextAlign="TextAlign.Right">
+                                        <Template Context="aporte">
+                                            <span style="font-weight: bold; color: var(--rz-primary);">RD$ @aporte.Monto.ToString("N2")</span>
+                                        </Template>
+                                    </RadzenDataGridColumn>
+                                </Columns>
+                            </RadzenDataGrid>
+                        </RadzenTabsItem>
+                        <RadzenTabsItem Text="Historial de Préstamos" Icon="credit_score">
+                            <RadzenDataGrid Data="@model.Prestamos" TItem="Prestamo" AllowPaging="true" PageSize="10" AllowSorting="true" EmptyText="No se encontraron préstamos registrados.">
+                                <Columns>
+                                    <RadzenDataGridColumn TItem="Prestamo" Property="FechaPrestamo" Title="Fecha Emisión" FormatString="{0:dd/MM/yyyy}" Width="150px" />
+                                    <RadzenDataGridColumn TItem="Prestamo" Property="TipoPrestamo" Title="Tipo" />
+                                    <RadzenDataGridColumn TItem="Prestamo" Property="Estado" Title="Estado">
+                                        <Template Context="p">
+                                            <RadzenBadge Text="@p.Estado" BadgeStyle="@(p.Estado == "Activo" ? BadgeStyle.Success : BadgeStyle.Warning)" />
+                                        </Template>
+                                    </RadzenDataGridColumn>
+                                    <RadzenDataGridColumn TItem="Prestamo" Property="Monto" Title="Monto Aprobado" TextAlign="TextAlign.Right">
+                                        <Template Context="p">
+                                            RD$ @p.Monto.ToString("N2")
+                                        </Template>
+                                    </RadzenDataGridColumn>
+                                </Columns>
+                            </RadzenDataGrid>
+                        </RadzenTabsItem>
+                    </Tabs>
+                </RadzenTabs>
+            }
+        </RadzenColumn>
+    </RadzenRow>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private EstadoCuentaViewModel? model;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Utilizamos la Factory para crear el contexto y asegurar la correcta gestión de vida en Blazor Server
+        using var context = DbFactory.CreateDbContext();
+        var service = new SocioService(context);
+        
+        // Reutilizamos la lógica del servicio SocioService ya existente en el proyecto
+        model = service.GetEstadoCuenta(Id);
+
+        if (model == null)
+        {
+            NavigationManager.NavigateTo("/socios");
+        }
+    }
+}
