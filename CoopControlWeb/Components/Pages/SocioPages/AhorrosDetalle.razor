@@ -230,9 +230,20 @@
     {
         using var ctx = DbFactory.CreateDbContext();
 
+        // Proyectar sólo las columnas necesarias para evitar seleccionar columnas que
+        // no existen en la base de datos (p. ej. 'FechaUltimoCalculoInteres').
         var entities = await ctx.Ahorros
             .Where(a => a.SocioId == socioId)
             .OrderBy(a => a.Tipo)
+            .Select(a => new
+            {
+                a.Id,
+                a.Tipo,
+                a.Saldo,
+                a.TasaInteresAnual,
+                a.FechaVencimiento,
+                a.Notas
+            })
             .ToListAsync();
 
         var list = entities.Select(a => new AhorroView
@@ -246,7 +257,6 @@
         }).ToList();
 
         ahorros = list;
-
         totalSaldo = ahorros.Sum(x => x.Saldo);
         totalInteres = ahorros.Sum(x => x.Saldo * x.TasaInteresAnual / 100m);
         totalDisponible = totalSaldo + totalInteres;
