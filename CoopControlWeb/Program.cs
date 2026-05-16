@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Radzen;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
+using CoopControlWeb.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,10 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddScoped<UserService>();
+builder.Services.AddControllers(); // Añadir esto
+builder.Services.AddScoped<PoliticasCreditoService>();
+
+
 
 builder.Services.AddDbContextFactory<AppDBContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -32,6 +37,8 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
 app.MapStaticAssets();
+
+app.MapControllers(); // Añadir esto antes de app.Run()
 
 app.UseAuthentication();
 app.UseMiddleware<AuthMiddleware>();

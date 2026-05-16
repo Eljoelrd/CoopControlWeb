@@ -17,6 +17,7 @@ namespace CoopControlWeb.Modelos
         public DbSet<User> Users { get; set; } = default!;
         public DbSet<PagoPrestamo> PagoPrestamo { get; set; } = default!;
         public DbSet<Certificado> Certificados { get; set; } = default!;
+        public DbSet<ConfiguracionGeneral> Configuraciones { get; set; } = default!;
 
 
         // === NUEVA ENTIDAD: DEPOSITOS ===
@@ -113,7 +114,27 @@ namespace CoopControlWeb.Modelos
                 entity.Property(a => a.TasaInteresAnual).HasColumnType("decimal(5,2)");
             });
 
+            // Configuración para AhorroMovimiento
+            modelBuilder.Entity<AhorroMovimiento>(entity =>
+            {
+                entity.ToTable("AhorroMovimientos");
+                entity.Property(am => am.Monto).HasColumnType("decimal(18,2)").IsRequired();
+            });
+            
+            modelBuilder.Entity<ConfiguracionGeneral>(entity =>
+            {
+                entity.ToTable("Configuraciones");
+                entity.HasKey(c => c.Clave);
+                entity.Property(c => c.Valor).IsRequired();
+            });
+
             // Si es necesario, añade configuración para AhorroMovimiento aquí
         }
+    }
+    public class ConfiguracionGeneral
+    {
+        public string Clave { get; set; } = null!; // Ej: "MultiplicadorPrestamo"
+        public string Valor { get; set; } = null!;
+        public string? Descripcion { get; set; }
     }
 }

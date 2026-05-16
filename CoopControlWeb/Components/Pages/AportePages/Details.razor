@@ -5,6 +5,7 @@
 @using CoopControlWeb.Modelos
 @inject IDbContextFactory<AppDBContext> DbFactory
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
 @using Microsoft.AspNetCore.Components.Authorization
 @attribute [Authorize(Roles = "Admin, Cajero")]
 @inject AuthenticationStateProvider AuthenticationStateProvider
@@ -103,7 +104,8 @@
                             <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
                                 <RadzenButton Text="Editar" Icon="edit" ButtonStyle="ButtonStyle.Warning"
                                               Click="@(() => NavigationManager.NavigateTo($"/aportes/edit?id={aporte.Id}"))" Style="color: black;" />
-                                <RadzenButton Text="Imprimir Comprobante" Icon="print" ButtonStyle="ButtonStyle.Secondary" />
+                                <RadzenButton Text="Imprimir Comprobante" Icon="print" ButtonStyle="ButtonStyle.Secondary"
+                                              Click="@ImprimirComprobante" />
                             </RadzenStack>
                         </RadzenStack>
 
@@ -139,5 +141,10 @@
         totalAportes = await context.Aportes
             .Where(a => a.SocioId == aporte.SocioId)
             .SumAsync(a => a.Monto);
+    }
+
+    private async Task ImprimirComprobante()
+    {
+        await JSRuntime.InvokeVoidAsync("open", $"/api/reportes/comprobante-aporte-pdf/{Id}", "_blank");
     }
 }

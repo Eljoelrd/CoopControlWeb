@@ -8,6 +8,7 @@
 @using System.Security.Claims
 @inject IDbContextFactory<AppDBContext> DbFactory
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Certificados - CoopControl</PageTitle>
@@ -80,7 +81,8 @@
                         <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Center" Gap="0.5rem">
                             <RadzenButton Icon="visibility" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Tooltip="Ver Detalles"
                                           Click="@(() => NavigationManager.NavigateTo($"/mis-prestamos/certificado/{c.Id}"))" />
-                            <RadzenButton Icon="print" ButtonStyle="ButtonStyle.Secondary" Size="ButtonSize.Small" Tooltip="Imprimir Certificado" />
+                            <RadzenButton Icon="print" ButtonStyle="ButtonStyle.Secondary" Size="ButtonSize.Small" Tooltip="Imprimir Certificado"
+                                          Click="@(() => ImprimirCertificado(c.Id))" />
                         </RadzenStack>
                     </Template>
                 </RadzenDataGridColumn>
@@ -196,6 +198,12 @@
         selectedSocioId = null;
         selectedSocioName = null;
         certificados = allCertificados;
+    }
+
+    private async Task ImprimirCertificado(int id)
+    {
+        // Redirige al endpoint del controlador que genera el PDF
+        await JSRuntime.InvokeVoidAsync("open", $"/api/reportes/certificado-pdf/{id}", "_blank");
     }
 
     private static bool EsPersonalAutorizado(ClaimsPrincipal? user)
