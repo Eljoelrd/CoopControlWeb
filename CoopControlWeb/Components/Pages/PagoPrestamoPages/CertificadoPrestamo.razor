@@ -89,7 +89,8 @@
                 <div class="rz-text-align-right rz-mt-8">
                     <RadzenButton Text="Volver" Icon="arrow_back" Variant="Variant.Text"
                       Click="@GoBack" Style="width: fit-content;" />
-                    <RadzenButton Text="Imprimir Certificado (Pronto)" Icon="print" ButtonStyle="ButtonStyle.Secondary" Class="rz-ms-2" Disabled="true" />
+                    <RadzenButton Text="Imprimir Certificado" Icon="print" ButtonStyle="ButtonStyle.Secondary" Class="rz-ms-2" 
+                                  Click="@ImprimirCertificado" />
                 </div>
             </RadzenStack>
         </RadzenCard>
@@ -115,5 +116,11 @@
     private async Task GoBack()
     {
         await JSRuntime.InvokeVoidAsync("history.back");
+    }
+
+    private async Task ImprimirCertificado()
+    {
+        // Llama al endpoint de la API para generar y abrir el PDF
+        await JSRuntime.InvokeVoidAsync("open", $"/api/reportes/certificado-pdf/{Id}", "_blank");
     }
 }

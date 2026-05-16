@@ -4,6 +4,7 @@
 @using CoopControlWeb.Modelos
 @rendermode InteractiveServer
 @attribute [Authorize(Roles = "Admin, Cajero")]
+@inject IJSRuntime JSRuntime
 @inject IDbContextFactory<AppDBContext> DbFactory
 
 <PageTitle>Reportes Generales - CoopControl Web</PageTitle>
@@ -15,7 +16,8 @@
             <RadzenText TextStyle="TextStyle.Body2" Class="rz-color-text-secondary">Consolidado de información operativa y financiera institucional</RadzenText>
         </RadzenColumn>
         <RadzenColumn Size="12" SizeMD="6" Class="rz-text-align-right">
-            <RadzenButton Icon="description" Text="Exportar Informe Global" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Flat" />
+            <RadzenButton Icon="description" Text="Exportar Informe Global" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Flat"
+                          Click="@ExportarInformeGlobal" />
         </RadzenColumn>
     </RadzenRow>
 
@@ -135,5 +137,10 @@
             new DataItem { Category = "Ahorros", Value = (double)totalAhorros },
             new DataItem { Category = "Préstamos", Value = (double)totalPrestamos }
         };
+    }
+
+    private async Task ExportarInformeGlobal()
+    {
+        await JSRuntime.InvokeVoidAsync("open", "/api/reportes/informe-global-pdf", "_blank");
     }
 }

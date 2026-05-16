@@ -13,6 +13,9 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddScoped<UserService>();
+builder.Services.AddControllers(); // Añadir esto
+
+
 
 builder.Services.AddDbContextFactory<AppDBContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -32,6 +35,8 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
 app.MapStaticAssets();
+
+app.MapControllers(); // Añadir esto antes de app.Run()
 
 app.UseAuthentication();
 app.UseMiddleware<AuthMiddleware>();
