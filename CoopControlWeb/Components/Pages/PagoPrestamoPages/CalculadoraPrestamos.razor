@@ -21,7 +21,7 @@
 
                     <RadzenStack Gap="1.5rem">
                         <RadzenFormField Text="Tipo de Préstamo" Variant="Variant.Outlined" Style="width: 100%;">
-                            <RadzenDropDown @bind-Value="simulacion.TipoPrestamo" Data="@(new[] { "Personal", "Comercial", "Vivienda" })" Change="@ActualizarTasa" />
+                            <RadzenDropDown @bind-Value="simulacion.TipoPrestamo" Data="@(new[] { "Personal", "Comercial", "Vivienda", "Vehículo" })" Change="@ActualizarValoresPorTipo" />
                         </RadzenFormField>
 
                         <RadzenRow>
@@ -62,14 +62,28 @@
 @code {
     private Prestamo simulacion = new() { Monto = 50000, PlazoMeses = 12, TasaInteres = 12m, TipoPrestamo = "Personal" };
 
-    private void ActualizarTasa()
+    private void ActualizarValoresPorTipo()
     {
-        simulacion.TasaInteres = simulacion.TipoPrestamo switch
+        switch (simulacion.TipoPrestamo)
         {
-            "Vivienda" => 8.5m,
-            "Comercial" => 10.0m,
-            _ => 12.0m
-        };
+            case "Vivienda":
+                simulacion.TasaInteres = 8.5m;
+                simulacion.PlazoMeses = 120;
+                break;
+            case "Comercial":
+                simulacion.TasaInteres = 10.0m;
+                simulacion.PlazoMeses = 60;
+                break;
+            case "Vehículo":
+                simulacion.TasaInteres = 11.0m;
+                simulacion.PlazoMeses = 48;
+                break;
+            default:
+                simulacion.TasaInteres = 12.0m;
+                simulacion.PlazoMeses = 24;
+                break;
+        }
+        StateHasChanged();
     }
 
     private void IrASolicitud()

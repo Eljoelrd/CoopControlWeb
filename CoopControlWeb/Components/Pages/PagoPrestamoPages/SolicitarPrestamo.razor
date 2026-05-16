@@ -31,20 +31,20 @@
 
                         <RadzenStack Gap="1.5rem">
                             <RadzenFormField Text="Tipo de Préstamo" Variant="Variant.Outlined" Style="width: 100%;">
-                                <RadzenDropDown @bind-Value="solicitud.TipoPrestamo" Data="@(new[] { "Personal", "Comercial", "Vivienda" })" Placeholder="Seleccione..." Name="TipoPrestamo" Change="@CalcularCuota" />
+                                <RadzenDropDown @bind-Value="solicitud.TipoPrestamo" Data="@(new[] { "Personal", "Comercial", "Vivienda", "Vehículo" })" Placeholder="Seleccione..." Name="TipoPrestamo" Change="@ActualizarValoresPorTipo" />
                             </RadzenFormField>
                             <RadzenRequiredValidator Component="TipoPrestamo" Text="Seleccione el tipo" />
 
                             <RadzenRow>
                                 <RadzenColumn Size="12" SizeMD="6">
                                     <RadzenFormField Text="Monto RD$" Variant="Variant.Outlined" Style="width: 100%;">
-                                        <RadzenNumeric @bind-Value="solicitud.Monto" Format="N2" Placeholder="0.00" Name="Monto" TValue="decimal" Change="@CalcularCuota" />
+                                        <RadzenNumeric @bind-Value="solicitud.Monto" Format="N2" Placeholder="0.00" Name="Monto" TValue="decimal" Change="@(() => StateHasChanged())" />
                                     </RadzenFormField>
                                     <RadzenRequiredValidator Component="Monto" Text="Monto requerido" />
                                 </RadzenColumn>
                                 <RadzenColumn Size="12" SizeMD="6">
                                     <RadzenFormField Text="Plazo (Meses)" Variant="Variant.Outlined" Style="width: 100%;">
-                                        <RadzenNumeric @bind-Value="solicitud.PlazoMeses" Placeholder="0" Min="1" TValue="int?" Change="@CalcularCuota" />
+                                        <RadzenNumeric @bind-Value="solicitud.PlazoMeses" Placeholder="0" Min="1" TValue="int?" Change="@(() => StateHasChanged())" />
                                     </RadzenFormField>
                                 </RadzenColumn>
                             </RadzenRow>
@@ -115,19 +115,30 @@
         if (query.TryGetValue("tipo", out var tVal)) 
             solicitud.TipoPrestamo = tVal;
 
-        CalcularCuota();
+        ActualizarValoresPorTipo();
     }
 
-    private void CalcularCuota()
+    private void ActualizarValoresPorTipo()
     {
-        // Actualizar tasa según el tipo de préstamo seleccionado para mayor realismo
-        solicitud.TasaInteres = solicitud.TipoPrestamo switch
+        switch (solicitud.TipoPrestamo)
         {
-            "Vivienda" => 8.5m,
-            "Comercial" => 10.0m,
-            _ => 12.0m
-        };
-
+            case "Vivienda":
+                solicitud.TasaInteres = 8.5m;
+                solicitud.PlazoMeses = 120;
+                break;
+            case "Comercial":
+                solicitud.TasaInteres = 10.0m;
+                solicitud.PlazoMeses = 60;
+                break;
+            case "Vehículo":
+                solicitud.TasaInteres = 11.0m;
+                solicitud.PlazoMeses = 48;
+                break;
+            default:
+                solicitud.TasaInteres = 12.0m;
+                solicitud.PlazoMeses = 24;
+                break;
+        }
         StateHasChanged();
     }
 
