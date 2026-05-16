@@ -2,10 +2,12 @@
 @rendermode InteractiveServer
 @using CoopControlWeb.Modelos
 @using Microsoft.EntityFrameworkCore
+@using CoopControlWeb.Services
 @inject IDbContextFactory<AppDBContext> DbFactory
 @inject NavigationManager NavigationManager
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Authorization
+@inject PoliticasCreditoService PoliticasService
 @attribute [Authorize(Roles = "Admin, Cajero")]
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
@@ -38,13 +40,22 @@
                                     <RadzenFormField Text="Socio Solicitante" Variant="Variant.Outlined" Style="width: 100%;">
                                         <RadzenDropDown @bind-Value="prestamo.SocioId" Data="@socios" 
                                                        TextProperty="NombreCompleto" ValueProperty="Id" 
-                                                       AllowFiltering="true" Placeholder="Seleccione un socio..." Name="SocioId" />
+                                                       AllowFiltering="true" Placeholder="Seleccione un socio..." Name="SocioId" Change="ValidarPoliticas" />
                                     </RadzenFormField>
                                     <RadzenRequiredValidator Component="SocioId" Text="El socio es obligatorio" DefaultValue="0" />
                                 </RadzenColumn>
+                                @if (!string.IsNullOrEmpty(infoSocioMensaje))
+                                {
+                                    <RadzenColumn Size="12">
+                                        <RadzenAlert AlertStyle="@(socioElegible ? AlertStyle.Success : AlertStyle.Danger)" 
+                                                     Variant="Variant.Flat" Shade="Shade.Lighter" ShowIcon="true" Size="AlertSize.Small">
+                                            @infoSocioMensaje
+                                        </RadzenAlert>
+                                    </RadzenColumn>
+                                }
                                 <RadzenColumn Size="12" SizeMD="4">
                                     <RadzenFormField Text="Tipo de Préstamo" Variant="Variant.Outlined" Style="width: 100%;">
-                                        <RadzenDropDown @bind-Value="prestamo.TipoPrestamo" Data="@(new[] { "Personal", "Comercial", "Vivienda", "Vehículo" })" />
+                                        <RadzenDropDown @bind-Value="prestamo.TipoPrestamo" Data="@(new[] { "Personal", "Comercial", "Vivienda", "Vehículo" })" Change="@ActualizarValoresPorTipo" />
                                     </RadzenFormField>
                                 </RadzenColumn>
                             </RadzenRow>
@@ -53,18 +64,18 @@
                             <RadzenRow>
                                 <RadzenColumn Size="12" SizeMD="4">
                                     <RadzenFormField Text="Monto Solicitado" Variant="Variant.Outlined" Style="width: 100%;">
-                                        <RadzenNumeric @bind-Value="prestamo.Monto" Format="c" Placeholder="0.00" Name="Monto" />
+                                        <RadzenNumeric @bind-Value="prestamo.Monto" TValue="decimal" Format="N2" Placeholder="0.00" Name="Monto" Change="ValidarPoliticas" />
                                     </RadzenFormField>
                                     <RadzenRequiredValidator Component="Monto" Text="Monto requerido" />
                                 </RadzenColumn>
                                 <RadzenColumn Size="12" SizeMD="4">
                                     <RadzenFormField Text="Tasa Interés (%)" Variant="Variant.Outlined" Style="width: 100%;">
-                                        <RadzenNumeric @bind-Value="prestamo.TasaInteres" Max="100" Min="0" Step="0.1" Placeholder="0.0" />
+                                        <RadzenNumeric @bind-Value="prestamo.TasaInteres" TValue="decimal?" Max="100" Min="0" Step="0.1" Placeholder="0.0" Change="@(() => StateHasChanged())" />
                                     </RadzenFormField>
                                 </RadzenColumn>
                                 <RadzenColumn Size="12" SizeMD="4">
                                     <RadzenFormField Text="Plazo (Meses)" Variant="Variant.Outlined" Style="width: 100%;">
-                                        <RadzenNumeric @bind-Value="prestamo.PlazoMeses" Min="1" Max="360" />
+                                        <RadzenNumeric @bind-Value="prestamo.PlazoMeses" TValue="int?" Min="1" Max="360" Change="@(() => StateHasChanged())" />
                                     </RadzenFormField>
                                 </RadzenColumn>
                             </RadzenRow>
@@ -88,6 +99,20 @@
                                 </RadzenColumn>
                             </RadzenRow>
 
+                            @* Resultados del Cálculo en Tiempo Real *@
+                            <RadzenAlert Title="Resumen de Cuotas" AlertStyle="AlertStyle.Info" Variant="Variant.Flat" Shade="Shade.Lighter" ShowIcon="true">
+                                <RadzenRow>
+                                    <RadzenColumn Size="12" SizeMD="6">
+                                        <RadzenText TextStyle="TextStyle.Subtitle2">Cuota Mensual Estimada</RadzenText>
+                                        <RadzenText TextStyle="TextStyle.H6"><b>RD$ @(prestamo.CuotaMensual?.ToString("N2") ?? "0.00")</b></RadzenText>
+                                    </RadzenColumn>
+                                    <RadzenColumn Size="12" SizeMD="6">
+                                        <RadzenText TextStyle="TextStyle.Subtitle2">Total a Pagar (Capital + Interés)</RadzenText>
+                                        <RadzenText TextStyle="TextStyle.H6"><b>RD$ @(prestamo.TotalConInteres?.ToString("N2") ?? "0.00")</b></RadzenText>
+                                    </RadzenColumn>
+                                </RadzenRow>
+                            </RadzenAlert>
+
                             <RadzenFormField Text="Observaciones" Variant="Variant.Outlined" Style="width: 100%;">
                                 <RadzenTextArea @bind-Value="prestamo.Observaciones" Rows="2" />
                             </RadzenFormField>
@@ -96,6 +121,7 @@
                                 <RadzenButton Text="Volver" Icon="arrow_back" ButtonStyle="ButtonStyle.Light" Variant="Variant.Text"
                                               Click="@(() => NavigationManager.NavigateTo("/prestamos"))" />
                                 <RadzenButton ButtonType="ButtonType.Submit" Text="Generar Préstamo" Icon="assignment_turned_in"
+                                              Disabled="@(!socioElegible || prestamo.Monto <= 0 || !string.IsNullOrEmpty(errorPolitica))"
                                               ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Large" 
                                               Style="border-radius: 25px; padding: 0 2rem;" />
                             </RadzenStack>
@@ -111,17 +137,71 @@
 @code {
     private Prestamo prestamo = new() { FechaPrestamo = DateTime.Today, Estado = "Activo", TipoPrestamo = "Personal" };
     private List<SocioDisplay> socios = new();
+    private string errorPolitica = "";
+    private string infoSocioMensaje = "";
+    private bool socioElegible = false;
 
     protected override async Task OnInitializedAsync()
     {
+        ActualizarValoresPorTipo(); // Cargar valores por defecto al inicio
         using var context = DbFactory.CreateDbContext();
         socios = await context.Socios
             .Select(s => new SocioDisplay { Id = s.Id, NombreCompleto = s.Nombre + " " + s.Apellido })
             .ToListAsync();
     }
 
+    private void ActualizarValoresPorTipo()
+    {
+        switch (prestamo.TipoPrestamo)
+        {
+            case "Vivienda":
+                prestamo.TasaInteres = 8.5m;
+                prestamo.PlazoMeses = 120;
+                break;
+            case "Comercial":
+                prestamo.TasaInteres = 10.0m;
+                prestamo.PlazoMeses = 60;
+                break;
+            case "Vehículo":
+                prestamo.TasaInteres = 11.0m;
+                prestamo.PlazoMeses = 48;
+                break;
+            default:
+                prestamo.TasaInteres = 12.0m;
+                prestamo.PlazoMeses = 24;
+                break;
+        }
+        StateHasChanged();
+    }
+
+    private async Task ValidarPoliticas()
+    {
+        errorPolitica = "";
+        
+        if (prestamo.SocioId > 0)
+        {
+            var status = await PoliticasService.VerificarElegibilidadSocioAsync(prestamo.SocioId);
+            socioElegible = status.EsElegible;
+            infoSocioMensaje = status.Mensaje;
+        }
+
+        if (socioElegible && prestamo.Monto > 0)
+        {
+            var res = await PoliticasService.ValidarNuevaSolicitudPrestamoAsync(prestamo.SocioId, prestamo.Monto);
+            if (!res.EsValido) errorPolitica = res.Mensaje;
+        }
+        StateHasChanged();
+    }
+
     private async Task AddPrestamo()
     {
+        var validacion = await PoliticasService.ValidarNuevaSolicitudPrestamoAsync(prestamo.SocioId, prestamo.Monto);
+        if (!validacion.EsValido)
+        {
+            errorPolitica = validacion.Mensaje;
+            return;
+        }
+
         using var context = DbFactory.CreateDbContext();
         prestamo.FechaCreacion = DateTime.Now;
         context.Prestamos.Add(prestamo);
@@ -129,5 +209,5 @@
         NavigationManager.NavigateTo("/prestamos");
     }
 
-    public class SocioDisplay { public int Id { get; set; } public string NombreCompleto { get; set; } }
+    public class SocioDisplay { public int Id { get; set; } public string NombreCompleto { get; set; } = string.Empty; }
 }

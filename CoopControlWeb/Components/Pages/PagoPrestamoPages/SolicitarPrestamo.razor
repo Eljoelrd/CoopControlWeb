@@ -4,11 +4,13 @@
 @using Microsoft.EntityFrameworkCore
 @using CoopControlWeb.Modelos
 @using Proyecto_Final.Modelos
+@using CoopControlWeb.Services
 @inject AuthenticationStateProvider AuthProvider
 @inject IDbContextFactory<AppDBContext> DbFactory
 @inject NavigationManager NavigationManager
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize(Roles = "Socio")]
+@inject PoliticasCreditoService PoliticasService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Solicitar Préstamo - CoopControl Web</PageTitle>
@@ -30,6 +32,14 @@
                         </RadzenStack>
 
                         <RadzenStack Gap="1.5rem">
+                            @if (!string.IsNullOrEmpty(infoSocioMensaje))
+                            {
+                                <RadzenAlert AlertStyle="@(socioElegible ? AlertStyle.Success : AlertStyle.Danger)" 
+                                             Variant="Variant.Flat" Shade="Shade.Lighter" ShowIcon="true" Size="AlertSize.Small">
+                                    @infoSocioMensaje
+                                </RadzenAlert>
+                            }
+
                             <RadzenFormField Text="Tipo de Préstamo" Variant="Variant.Outlined" Style="width: 100%;">
                                 <RadzenDropDown @bind-Value="solicitud.TipoPrestamo" Data="@(new[] { "Personal", "Comercial", "Vivienda", "Vehículo" })" Placeholder="Seleccione..." Name="TipoPrestamo" Change="@ActualizarValoresPorTipo" />
                             </RadzenFormField>
@@ -38,8 +48,14 @@
                             <RadzenRow>
                                 <RadzenColumn Size="12" SizeMD="6">
                                     <RadzenFormField Text="Monto RD$" Variant="Variant.Outlined" Style="width: 100%;">
-                                        <RadzenNumeric @bind-Value="solicitud.Monto" Format="N2" Placeholder="0.00" Name="Monto" TValue="decimal" Change="@(() => StateHasChanged())" />
+                                        <RadzenNumeric @bind-Value="solicitud.Monto" Format="N2" Placeholder="0.00" Name="Monto" TValue="decimal" Change="ValidarPoliticas" />
                                     </RadzenFormField>
+                                    @if (limiteDisponible > 0)
+                                    {
+                                        <RadzenText TextStyle="TextStyle.Caption" Class="rz-color-info rz-mt-1">
+                                            Límite según aportes: <b>RD$ @limiteDisponible.ToString("N2")</b>
+                                        </RadzenText>
+                                    }
                                     <RadzenRequiredValidator Component="Monto" Text="Monto requerido" />
                                 </RadzenColumn>
                                 <RadzenColumn Size="12" SizeMD="6">
@@ -74,7 +90,8 @@
 
                             <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" Class="rz-mt-6">
                                 <RadzenButton Text="Volver a Mis Préstamos" Icon="arrow_back" ButtonStyle="ButtonStyle.Light" Variant="Variant.Text" Click="@(() => NavigationManager.NavigateTo("/mis-prestamos"))" />
-                                <RadzenButton ButtonType="ButtonType.Submit" Text="Enviar Solicitud" Icon="send" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Large" Style="border-radius: 25px; padding: 0 2rem;" />
+                                <RadzenButton ButtonType="ButtonType.Submit" Text="Enviar Solicitud" Icon="send" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Large" Style="border-radius: 25px; padding: 0 2rem;" 
+                                              Disabled="@(!socioElegible || solicitud.Monto <= 0 || !string.IsNullOrEmpty(errorPolitica))" />
                             </RadzenStack>
                         </RadzenStack>
                     </div>
@@ -87,7 +104,11 @@
 @code {
     private Prestamo solicitud = new() { FechaPrestamo = DateTime.Today, Estado = "Pendiente", TasaInteres = 12.0m, Monto = 0 };
     private int socioId;
+    private decimal limiteDisponible;
     private string statusMessage = "";
+    private string infoSocioMensaje = "";
+    private bool socioElegible = false;
+    private string errorPolitica = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -98,7 +119,14 @@
         {
             using var context = DbFactory.CreateDbContext();
             var socio = await context.Socios.FirstOrDefaultAsync(s => s.Email == email);
-            if (socio != null) socioId = socio.Id;
+            if (socio != null) 
+            {
+                socioId = socio.Id;
+                var status = await PoliticasService.VerificarElegibilidadSocioAsync(socioId);
+                socioElegible = status.EsElegible;
+                infoSocioMensaje = status.Mensaje;
+                limiteDisponible = status.LimiteMaximo;
+            }
             else statusMessage = "Error crítico: El usuario logueado no está registrado como Socio de la cooperativa.";
         }
 
@@ -116,6 +144,7 @@
             solicitud.TipoPrestamo = tVal;
 
         ActualizarValoresPorTipo();
+        if (solicitud.Monto > 0) await ValidarPoliticas();
     }
 
     private void ActualizarValoresPorTipo()
@@ -142,9 +171,26 @@
         StateHasChanged();
     }
 
+    private async Task ValidarPoliticas()
+    {
+        errorPolitica = "";
+        if (socioElegible && solicitud.Monto > 0)
+        {
+            var res = await PoliticasService.ValidarNuevaSolicitudPrestamoAsync(socioId, solicitud.Monto);
+            if (!res.EsValido) errorPolitica = res.Mensaje;
+        }
+        statusMessage = errorPolitica; // Mostramos el error en el alert inferior de la página
+        StateHasChanged();
+    }
+
     private async Task EnviarSolicitud()
     {
         if (socioId == 0) return;
+        statusMessage = "";
+
+        // Validar contra las políticas
+        await ValidarPoliticas();
+        if (!string.IsNullOrEmpty(statusMessage)) return;
 
         using var context = DbFactory.CreateDbContext();
         solicitud.SocioId = socioId;

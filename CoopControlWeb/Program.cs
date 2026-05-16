@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Radzen;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
+using CoopControlWeb.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +15,7 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddScoped<UserService>();
 builder.Services.AddControllers(); // Añadir esto
+builder.Services.AddScoped<PoliticasCreditoService>();
 
 
 
