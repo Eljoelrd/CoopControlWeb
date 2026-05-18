@@ -180,7 +180,6 @@
                 .Include(d => d.Socio)
                 .Include(d => d.Aporte)
                 .Include(d => d.Prestamo)
-                .Where(d => d.TipoDeposito != "Retiro" && d.TipoDeposito != "Retirables")
                 .OrderByDescending(d => d.Id)
                 .ToListAsync();
         }
