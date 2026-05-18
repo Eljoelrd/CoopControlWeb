@@ -25,17 +25,7 @@ namespace CoopControlWeb.Services
                 .SumAsync(a => a.Monto);
 
             // 2. Obtener multiplicador de la configuración (por defecto 3)
-            decimal multiplicador = 3.0m;
-            try 
-            {
-                var config = await context.Configuraciones.FirstOrDefaultAsync(c => c.Clave == "MultiplicadorPrestamo");
-                if (config != null && decimal.TryParse(config.Valor, out var val))
-                    multiplicador = val;
-            }
-            catch 
-            {
-                // Si la tabla no existe o falla, usamos el valor por defecto (3.0)
-            }
+            decimal multiplicador = await ObtenerMultiplicadorAsync(context);
 
             // 3. Obtener deuda actual (capital pendiente de préstamos activos)
             var deudaActual = await context.Prestamos
@@ -123,11 +113,7 @@ namespace CoopControlWeb.Services
                     .SumAsync(p => p.Monto); 
 
                 // Usamos el multiplicador configurado para saber cuánto capital debe quedar retenido
-                decimal multiplicador = 3.0m;
-                try {
-                    var config = await context.Configuraciones.FirstOrDefaultAsync(c => c.Clave == "MultiplicadorPrestamo");
-                    if (config != null && decimal.TryParse(config.Valor, out var val)) multiplicador = val;
-                } catch { }
+                decimal multiplicador = await ObtenerMultiplicadorAsync(context);
 
                 // Si el socio debe 90k y el multiplicador es 3, debe tener al menos 30k en aportes.
                 decimal garantiaRequerida = saldoDeuda / multiplicador;
@@ -143,6 +129,22 @@ namespace CoopControlWeb.Services
             }
 
             return (true, "Retiro autorizado.");
+        }
+
+        private async Task<decimal> ObtenerMultiplicadorAsync(AppDBContext context)
+        {
+            decimal multiplicador = 3.0m;
+            try
+            {
+                var config = await context.Configuraciones.FirstOrDefaultAsync(c => c.Clave == "MultiplicadorPrestamo");
+                if (config != null && decimal.TryParse(config.Valor, out var val))
+                    multiplicador = val;
+            }
+            catch
+            {
+                // Si falla, retornamos el valor por defecto
+            }
+            return multiplicador;
         }
     }
 }

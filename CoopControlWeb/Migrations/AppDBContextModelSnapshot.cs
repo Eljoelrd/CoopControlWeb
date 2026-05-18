@@ -33,9 +33,6 @@ namespace CoopControlWeb.Migrations
                     b.Property<DateTime?>("FechaCreacion")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("FechaUltimoCalculoInteres")
-                        .HasColumnType("datetime2");
-
                     b.Property<DateTime?>("FechaVencimiento")
                         .HasColumnType("datetime2");
 

@@ -40,6 +40,7 @@ namespace CoopControlWeb.Modelos
         // Para plazos o vencimientos (si aplica)
         public DateTime? FechaCreacion { get; set; } = DateTime.Now;
         public DateTime? FechaVencimiento { get; set; }
+        [NotMapped]
         public DateTime FechaUltimoCalculoInteres { get; set; } = DateTime.Now;
         public string? Notas { get; set; }
 
