@@ -23,7 +23,7 @@
     <RadzenCard Variant="Variant.Flat" Class="rz-shadow-2">
         @* DataGrid de Radzen con Paginación, Filtrado y Ordenamiento automáticos *@
         <RadzenDataGrid AllowFiltering="true" AllowColumnResize="true" AllowAlternatingRows="false"
-                        FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="10" AllowPaging="true"
+                        FilterMode="FilterMode.Advanced" AllowSorting="true" PageSize="10" PageSizeOptions="@(new int[]{10, 25, 50, 100})" AllowPaging="true"
                         PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
                         Data="@allSocios" TItem="Socios" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or">
             <Columns>

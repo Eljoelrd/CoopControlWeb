@@ -83,7 +83,7 @@
         <RadzenCard Class="rz-shadow-4">
             <RadzenDataGrid @ref="grid" Data="@allDepositos" TItem="Deposito" 
                             AllowFiltering="true" FilterMode="FilterMode.Simple" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
-                            AllowPaging="true" PageSize="10" AllowSorting="true" 
+                            AllowPaging="true" PageSize="10" PageSizeOptions="@(new int[]{10, 25, 50, 100})" AllowSorting="true" 
                             PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
                             EmptyText="No se encontraron registros de depósitos.">
                 <Columns>

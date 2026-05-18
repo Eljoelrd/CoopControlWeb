@@ -26,6 +26,7 @@
             @* REPORTE DE SOCIOS *@
             <RadzenTabsItem Text="Listado de Socios" Icon="group">
                 <RadzenDataGrid Data="@sociosList" TItem="Socios" AllowPaging="true" PageSize="10" 
+                                PageSizeOptions="@(new int[]{10, 25, 50, 100})" ShowPagingSummary="true" PagerHorizontalAlign="HorizontalAlign.Left"
                                 AllowSorting="true" AllowFiltering="true" FilterMode="FilterMode.Simple"
                                 Responsive="true" Class="rz-shadow-1">
                     <Columns>
@@ -81,7 +82,9 @@
                 <RadzenRow Class="rz-mt-6">
                     <RadzenColumn Size="12" SizeLG="8">
                         <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-4">Últimas Transacciones</RadzenText>
-                        <RadzenDataGrid Data="@recentDepositos" TItem="Deposito" AllowPaging="true" PageSize="5" Density="Density.Compact">
+                        <RadzenDataGrid Data="@recentDepositos" TItem="Deposito" AllowPaging="true" PageSize="5" 
+                                        PageSizeOptions="@(new int[]{5, 10, 25, 50})" ShowPagingSummary="true" PagerHorizontalAlign="HorizontalAlign.Left"
+                                        Density="Density.Compact">
                             <Columns>
                                 <RadzenDataGridColumn TItem="Deposito" Property="FechaDeposito" Title="Fecha" FormatString="{0:dd/MM/yyyy}" Width="120px" />
                                 <RadzenDataGridColumn TItem="Deposito" Property="Socio.Nombre" Title="Socio">

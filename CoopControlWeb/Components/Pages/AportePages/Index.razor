@@ -6,13 +6,12 @@
 @inject IDbContextFactory<AppDBContext> DbFactory
 @inject IJSRuntime JS
 @using Microsoft.AspNetCore.Components.Authorization
-@using Microsoft.AspNetCore.Authorization
 @attribute [Authorize(Roles = "Admin, Cajero")]
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Prototipo - Gestión de Aportes</PageTitle>
 
-<div class="container-fluid mt-4">
+<div class="rz-p-0 rz-p-md-12">
     <RadzenStack Gap="1.5rem">
         
         @* Encabezado Dinámico *@
@@ -22,7 +21,7 @@
                     <RadzenIcon Icon="account_balance" Size="36px" Style="color: var(--rz-success)" />
                     <div>
                         <RadzenText TextStyle="TextStyle.H4" TagName="TagName.H1" Class="rz-m-0">Gestión de Aportes</RadzenText>
-                        <RadzenText TextStyle="TextStyle.Caption">Prototipo v1.0 - Registro histórico de transacciones</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Caption">v1.0 - Registro histórico de transacciones</RadzenText>
                     </div>
                 </RadzenStack>
             </RadzenColumn>
@@ -34,7 +33,7 @@
 
         @* Tarjetas de Resumen Rápido (Ideales para prototipos) *@
         <RadzenRow Gap="1rem">
-            <RadzenColumn Size="12" SizeMD="4">
+            <RadzenColumn Size="12" SizeMD="6">
                 <RadzenCard Variant="Variant.Flat" Class="rz-background-color-success-lighter rz-p-4">
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
                         <RadzenIcon Icon="payments" Style="color: var(--rz-success)" />
@@ -45,7 +44,7 @@
                     </RadzenStack>
                 </RadzenCard>
             </RadzenColumn>
-            <RadzenColumn Size="12" SizeMD="4">
+            <RadzenColumn Size="12" SizeMD="6">
                 <RadzenCard Variant="Variant.Flat" Class="rz-background-color-info-lighter rz-p-4">
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
                         <RadzenIcon Icon="event" Style="color: var(--rz-info)" />
@@ -62,7 +61,7 @@
         <RadzenCard Class="rz-shadow-4">
             <RadzenDataGrid @ref="grid" Data="@allAportes" TItem="Aporte" 
                             AllowFiltering="true" FilterMode="FilterMode.Simple" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
-                            AllowPaging="true" PageSize="10" AllowSorting="true" 
+                            AllowPaging="true" PageSize="10" PageSizeOptions="@(new int[]{10, 25, 50, 100})" AllowSorting="true" 
                             PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
                             EmptyText="No se encontraron registros de aportes.">
                 <Columns>

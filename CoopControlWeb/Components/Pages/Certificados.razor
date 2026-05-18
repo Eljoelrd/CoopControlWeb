@@ -20,8 +20,6 @@
             <RadzenText TextStyle="TextStyle.Caption">Control de certificados generados a partir de préstamos</RadzenText>
         </RadzenColumn>
         <RadzenColumn Size="12" SizeMD="6" Class="rz-text-align-right">
-            <RadzenButton Text="Emitir Nuevo" Icon="add_circle" ButtonStyle="ButtonStyle.Primary"
-                          Click="@(() => NavigationManager.NavigateTo("/certificados/nuevo"))" />
         </RadzenColumn>
     </RadzenRow>
 
@@ -49,7 +47,8 @@
     }
     else
     {
-        <RadzenDataGrid Data="@certificados" TItem="Certificado" AllowPaging="true" PageSize="10"
+        <RadzenDataGrid Data="@certificados" TItem="Certificado" AllowPaging="true" PageSize="10" 
+                        PageSizeOptions="@(new int[]{10, 25, 50, 100})" ShowPagingSummary="true" PagerHorizontalAlign="HorizontalAlign.Left"
                         AllowSorting="true" AllowFiltering="true" FilterMode="FilterMode.Simple" Responsive="true"
                         EmptyText="No se encontraron certificados generados desde préstamos.">
             <Columns>
