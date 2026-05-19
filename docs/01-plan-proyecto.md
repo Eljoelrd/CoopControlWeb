@@ -8,7 +8,7 @@ Desarrollar un sistema de gestión integral para cooperativas.
 |------|----------|--------|
 | Planificación | 1 semana | ✅ Completado |
 | Diseño UI/UX | 1 semana | ✅ Completado |
-| Desarrollo | 4 semanas | 🔄 En progreso |
+| Desarrollo | 4 semanas | 🔄 En progreso (85%) |
 | Testing | 1 semana | ⏳ Pendiente |
 | Despliegue | 1 semana | ⏳ Pendiente |
 
@@ -24,3 +24,4 @@ Desarrollar un sistema de gestión integral para cooperativas.
 - Blazor Web
 - Radzen UI
 - Git/GitHub
+- QuestPDF (Generación de Reportes)

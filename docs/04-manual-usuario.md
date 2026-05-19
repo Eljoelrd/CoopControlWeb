@@ -54,19 +54,25 @@ El sistema está dirigido a:
 - Eliminar o desactivar socio.  
 - Validaciones de campos requeridos.  
 
-### 3.3 Reportes
-- Generar reporte de socios.  
-- Generar reporte financiero.  
-- Exportar a PDF/Excel.  
-- Filtrar por fechas.  
+### 3.3 Reportes y Documentos
+- **Informe Global**: Resumen ejecutivo de la cartera de aportes, ahorros y préstamos.
+- **Comprobantes**: Al realizar un aporte, el sistema permite descargar el recibo oficial.
+- **Certificados**: Generación de documentos oficiales de préstamos y membresía en formato PDF.
 
-### 3.4 Configuración
+### 3.4 Gestión de Ahorros
+- El sistema permite manejar diversos tipos de ahorros:
+  - **Ahorro Navideño**: Con tasa de interés preferencial.
+  - **Ahorro Escolar/Infantil**: Para metas específicas.
+  - **Inversión a Plazo**: Certificados financieros con vencimiento.
+- Consulta de intereses ganados acumulados en tiempo real.
+
+### 3.5 Configuración
 - Cambiar contraseña.  
 - Actualizar perfil de usuario.  
 - Ajustar preferencias del sistema.  
 - Activar modo oscuro/claro.  
 
-### 3.5 Certificados
+### 3.6 Certificados
 - Solicitar nuevo certificado.  
 - Tipos de certificados disponibles:  
   - Certificado de aportaciones.  
@@ -77,7 +83,7 @@ El sistema está dirigido a:
 - Historial de certificados.  
 - Validar certificado mediante código QR.  
 
-### 3.6 Retiros
+### 3.7 Retiros
 - Solicitar nuevo retiro.  
 - Tipos de retiro disponibles:  
   - Retiro parcial de aportaciones.  
@@ -85,6 +91,7 @@ El sistema está dirigido a:
   - Retiro de intereses/dividendos.  
 - Monto mínimo y máximo permitido.  
 - Tiempo de procesamiento.  
+- **Validación de Garantía**: Si tiene préstamos activos, el sistema bloqueará retiros que dejen la cuenta de aportes por debajo del margen de garantía requerido.
 - Ver estado de solicitud.  
 - Historial de retiros.  
 - Cancelar solicitud pendiente.  
@@ -93,17 +100,34 @@ El sistema está dirigido a:
 
 ## 4. Navegación y Atajos
 ### 4.1 Menú Principal
+El sistema utiliza un menú lateral colapsable. Puede alternar su visibilidad haciendo clic en el botón de "hamburguesa" (tres líneas horizontales) situado en la esquina superior izquierda. Las opciones están categorizadas por módulos (Socios, Préstamos, Ahorros, Reportes) para facilitar el acceso.
+
 ### 4.2 Búsqueda Rápida
+En todas las pantallas de listado (como el buscador de socios), encontrará una barra de filtros superior. Puede escribir nombres, números de cédula o códigos de socio; la tabla se actualizará automáticamente sin necesidad de recargar la página.
+
 ### 4.3 Notificaciones
+El sistema cuenta con un centro de alertas en tiempo real ubicado en la barra superior (icono de campana). Un indicador numérico verde aparecerá cuando existan eventos pendientes, tales como:
+- Préstamos que han entrado en estado de **Mora**.
+- Solicitudes de retiro que superan el margen de garantía y requieren revisión.
+- Vencimientos próximos de certificados de inversión a plazo.
+
 ### 4.4 Cerrar Sesión
+Para salir del sistema de forma segura, haga clic en el círculo con su nombre o avatar en la parte superior derecha (Chip de Perfil) y seleccione la opción "Cerrar Sesión". Esto limpiará los datos de su sesión actual.
 
 ---
 
 ## 5. Preguntas Frecuentes (FAQ)
-- ¿Cómo recupero mi contraseña?  
-- ¿Por qué no puedo ver ciertos módulos?  
-- ¿Cómo contacto soporte técnico?  
-- ¿El sistema funciona en móviles?  
+**¿Cómo recupero mi contraseña?**  
+En la pantalla de acceso, haga clic en "¿Olvidó su contraseña?". Se le enviará un correo con las instrucciones. Si no tiene un correo configurado, el administrador de la cooperativa puede resetear su clave desde el panel de gestión de usuarios.
+
+**¿Por qué no puedo ver ciertos módulos?**  
+La visibilidad de los módulos de "Configuración" y "Reportes Globales" está restringida según el rol de usuario. Si necesita acceso adicional, solicite al administrador que actualice sus permisos de perfil.
+
+**¿Cómo contacto soporte técnico?**  
+Puede enviar un reporte directamente a través del correo soporte@coopcontrol.com o utilizar el formulario de incidencias disponible en la sección de contacto al final del menú lateral.
+
+**¿El sistema funciona en móviles?**  
+Sí, **CoopControl Web** está construido con una arquitectura responsiva que se adapta automáticamente a teléfonos inteligentes y tabletas, permitiendo gestionar solicitudes y aprobaciones desde cualquier lugar.
 
 ---
 

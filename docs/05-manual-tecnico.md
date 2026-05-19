@@ -17,6 +17,7 @@ El sistema **CoopControl Web** está diseñado para la gestión integral de coop
 - **Radzen.Blazor**: Conjunto de componentes UI para Blazor.  
 - **Entity Framework (EF)**: ORM para interactuar con bases de datos SQL.  
 - **Repository Pattern**: Patrón de diseño para separar la lógica de acceso a datos.  
+- **QuestPDF**: Librería para la generación de documentos PDF estructurados.
 - **CI/CD**: Integración y despliegue continuo.  
 
 ## 2. Arquitectura del Sistema
@@ -31,7 +32,8 @@ El sistema **CoopControl Web** está diseñado para la gestión integral de coop
 |-------------------|-----------------|---------|
 | Frontend          | Blazor Web      | .NET 9  |
 | UI Framework      | Radzen.Blazor   | Latest  |
-| Backend           | .NET 9          | 9.0.x   |
+| Backend           | .NET 9 / Web API| 9.0.x   |
+| PDF Engine        | QuestPDF        | Latest  |
 | Base de Datos     | SQL Server      | 2022    |
 | Control de Versiones | Git          | 2.x     |
 
@@ -45,12 +47,17 @@ El sistema **CoopControl Web** está diseñado para la gestión integral de coop
 ### 3.1 Árbol de Directorios
 ```
 CoopControlWeb/
+├── Controllers/
+│   └── ReportesController.cs
 ├── Components/
 │   ├── Layout/
 │   │   └── MainLayout.razor
 │   └── Pages/
 │       ├── Home.razor
 │       └── ...
+├── Modelos/
+│   ├── PoliticasCreditoService.cs
+│   └── ...
 ├── wwwroot/
 │   ├── css/
 │   │   └── app.css
@@ -65,6 +72,10 @@ CoopControlWeb/
 - /wwwroot: Recursos estáticos  
 - /docs: Documentación  
 - /.github: Configuración de GitHub  
+
+### 3.3 Servicios de Lógica de Negocio
+- **PoliticasCreditoService.cs**: Contiene el motor de reglas de crédito. Implementa el cálculo de capacidad basado en el multiplicador de aportes (por defecto 3x) y valida las restricciones de garantía para retiros.
+- **DepositoService.cs**: Gestiona la orquestación de ingresos de efectivo, vinculando automáticamente los depósitos con la creación de aportes ordinarios o la amortización de cuotas de préstamos mediante transacciones SQL.
 
 ## 4. Configuración del Entorno
 
@@ -129,6 +140,10 @@ dotnet run
 |--------------|--------------------------|
 | Usuarios     | Credenciales y roles     |
 | Socios       | Información de socios    |
+| Ahorros      | Tipos de ahorro y balances |
+| Aportes      | Registro de capital social |
+| Pagos        | Amortizaciones de préstamos |
+| Prestamos    | Gestión de créditos y cuotas |
 | Certificados | Solicitudes y emisión de certificados |
 | Retiros      | Solicitudes y procesamiento de retiros |
 | Reportes     | Historial de reportes    |
@@ -165,6 +180,9 @@ dotnet ef database update
 | POST   | /api/socios      | Crear socio       |
 | PUT    | /api/socios/{id} | Actualizar socio  |
 | DELETE | /api/socios/{id} | Eliminar socio    |
+| GET    | /api/reportes/comprobante/{id} | Genera PDF de recibo de caja |
+| GET    | /api/reportes/solicitud/{id}   | Genera PDF de contrato de préstamo |
+| GET    | /api/reportes/estado-cuenta/{socioId} | Resumen de movimientos |
 
 ## 9. Estilos y Temas
 
@@ -173,10 +191,10 @@ dotnet ef database update
 :root {
     --bg-primary: #ffffff;
     --text-primary: #1a1a1a;
-    --accent-color: #667eea;
+    --accent-color: #2f855a; 
 }
 [data-theme="dark"] {
-    --bg-primary: #1a1a2e;
+    --bg-primary: #111827;
     --text-primary: #eaeaea;
 }
 ```
