@@ -1,0 +1,4 @@
+Tienes dos opciones para hacer pruebas con base de datos:
+1- Usar los scripts de database.sql.
+
+2- Usar el backup (coopcontrol_db.bak).
